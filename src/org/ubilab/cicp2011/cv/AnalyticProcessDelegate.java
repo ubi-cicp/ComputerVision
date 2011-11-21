@@ -9,6 +9,11 @@ import static com.googlecode.javacv.cpp.opencv_core.IplImage;
  */
 public interface AnalyticProcessDelegate {
     /**
+     * 指定した名前のCanvasFrameを生成する
+     * @param key CanvasFrameの名前
+     */
+    public void createCanvas(String key);
+    /**
      * Imageを指定したkeyのCanvasFrameに表示する
      * @param key CanvasFrame名
      * @param image 表示する画像

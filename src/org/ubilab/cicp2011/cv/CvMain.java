@@ -23,22 +23,9 @@ public class CvMain implements AnalyticProcessDelegate {
     private CvCapture capture;
     private boolean debug;
     private static final HashMap<String, CanvasFrame> canvas;
-    
+    private AnalyticProcess curThread = null;
     static {
         canvas = new HashMap<String, CanvasFrame>();
-        String[] keys = {"Source", "Hough", "ROI View"};
-        for (int i = 0; i < keys.length; i++) {
-            CanvasFrame tmp = new CanvasFrame(keys[i]);
-            tmp.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            tmp.addWindowListener(new WindowAdapter() {
-                // ウィンドウが閉じるときに呼ばれる
-                @Override
-                public void windowClosing(WindowEvent e) {
-                        AnalyticProcess.releaseMemStorage();
-                }
-            });
-            canvas.put(keys[i], tmp);
-        }
     }
 
     /**
@@ -87,23 +74,53 @@ public class CvMain implements AnalyticProcessDelegate {
         capture = cvCreateCameraCapture(param.camera);
         cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_WIDTH, param.width);
         cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_HEIGHT, param.height);
+        
+        // デバッグ用設定
         debug = param.debug;
+        if (debug) {
+            CanvasFrame tmp = new CanvasFrame("Source");
+            tmp.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            tmp.addWindowListener(new WindowAdapter() {
+                // ウィンドウが閉じるときに呼ばれる
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    curThread.stop();
+                    AnalyticProcess.releaseMemStorage();
+                }
+            });
+            canvas.put("Source", tmp);
+            
+            createCanvas("Hough");
+            createCanvas("ROI View");
+        }
         _setVisible(debug);
         
         while (true) {
-            AnalyticProcess thread = new AnalyticProcess(_captureFrame(), debug, this);
-            thread.start();
+            curThread = new AnalyticProcess(_captureFrame(), debug, this);
+            curThread.start();
             try {
                 // スレッドの実行が終了するまで待機
-                thread.join();
+                curThread.join();
             } catch (InterruptedException e) {
-                
+                curThread = null;
+                break;
             }
         }
     }
 
     @Override
-    public void showImage(String key, IplImage image) {
+    public final void createCanvas(String key) {
+        synchronized(this) {
+            if (!canvas.containsKey(key)) {
+                CanvasFrame tmp = new CanvasFrame(key);
+                tmp.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+                canvas.put(key, tmp);
+            }
+        }
+    }
+    
+    @Override
+    public final void showImage(String key, IplImage image) {
         synchronized(this) {
             if (canvas.containsKey(key))
                 canvas.get(key).showImage(image);
@@ -123,7 +140,7 @@ public class CvMain implements AnalyticProcessDelegate {
     private IplImage _captureFrame() {
         IplImage capFrame;
         capFrame = cvQueryFrame(capture);
-        canvas.get("Source").showImage(capFrame);
+        showImage("Source", capFrame);
         return capFrame;
     }
     
@@ -140,5 +157,6 @@ public class CvMain implements AnalyticProcessDelegate {
     
     public static void main(String[] args) {
         new CvMain.Builder(0).debug(true).build();
+        System.exit(0);
     }
 }
