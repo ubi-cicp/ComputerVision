@@ -78,15 +78,12 @@ public class AnalyticProcess extends Thread {
         // 盤検出
         getROI(src);
         
-        // TODO: 領域切り出しがうまくいかない．ROI検出の時点でミスが？
         if (roiRect.width() * roiRect.height() > 0) {
-        // ROI領域切り出し
-        IplImage roiFrame = cvCreateImage(roiSize, IPL_DEPTH_8U, 3);
-        cvSetImageROI(src, roiRect);
-        cvCopy(src, roiFrame);
-        
-        // ます検出
-        getRects(roiFrame);
+            // ROI領域切り出し
+            IplImage roiFrame = getROIView(src, roiRect);
+
+            // ます検出
+            getRects(roiFrame);
         }
     }
     
@@ -155,9 +152,30 @@ public class AnalyticProcess extends Thread {
     /**
      * 計算済みのROIを取得する
      * @return 既に計算済みの場合はそのCvRectを．そうでない場合はnullを返す
+     * @since 2011/11/17
      */
     public synchronized CvRect getROI() {
         return roiRect;
+    }
+    
+    /**
+     * 指定されたROI領域を切り出して返す
+     * @param input 入力画像
+     * @param roi ROI領域
+     * @return ROI領域の画像
+     * @since 2011/11/21
+     */
+    public IplImage getROIView(IplImage input, CvRect roi) {
+        IplImage tmp = cvCreateImage(srcSize, IPL_DEPTH_8U, 3);
+        IplImage roiImage = cvCreateImage(roiSize, IPL_DEPTH_8U, 3);
+        
+        cvCopy(input, tmp);
+        cvSetImageROI(tmp, roi);
+        cvCopy(tmp, roiImage);
+        
+        cvReleaseImage(tmp);
+        
+        return roiImage;
     }
     
     /**

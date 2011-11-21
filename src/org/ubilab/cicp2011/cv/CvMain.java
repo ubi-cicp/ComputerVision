@@ -122,8 +122,11 @@ public class CvMain implements AnalyticProcessDelegate {
     @Override
     public final void showImage(String key, IplImage image) {
         synchronized(this) {
-            if (canvas.containsKey(key))
-                canvas.get(key).showImage(image);
+            if (canvas.containsKey(key)) {
+                CanvasFrame f = canvas.get(key);
+                f.setSize(image.width(), image.height());
+                f.showImage(image);
+            }
         }
     }
     
