@@ -15,7 +15,7 @@ import static com.googlecode.javacpp.Loader.*;
  * @author atsushi-o
  * @since 2011/11/17
  */
-public class AnalyticProcess extends Thread {
+public class AnalyticProcess {
     private static final CvMemStorage storage;
     private IplImage src = null;
     private CvSize srcSize = null;
@@ -94,7 +94,6 @@ public class AnalyticProcess extends Thread {
      * 画像処理本体
      * @since 2011/11/17
      */
-    @Override
     public void run() {
         // 盤検出
         getROI(src);

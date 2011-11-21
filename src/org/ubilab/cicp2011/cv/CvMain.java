@@ -25,7 +25,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
     private boolean debug;
     private static final HashMap<String, CanvasFrame> canvas;
     private AnalyticProcess curThread = null;
-    
+
     static {
         canvas = new HashMap<String, CanvasFrame>();
     }
@@ -37,12 +37,12 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
     public static class Builder {
         // Required param
         private final int camera;
-        
+
         // Optional param
         private int width       = 1280;
         private int height      = 960;
         private boolean debug   = false;
-        
+
         /**
          * 必須パラメータを指定
          * @param camera OpenCVで使用するカメラのインデックス
@@ -51,11 +51,11 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
         public Builder(int camera) {
             this.camera = camera;
         }
-        
+
         public Builder width(int val)       { width = val; return this; }
         public Builder height(int val)      { height = val; return this; }
         public Builder debug(boolean val)   { debug = val; return this; }
-        
+
         /**
          * CvMainのインスタンスを生成する
          * @return CvMainのインスタンス
@@ -65,7 +65,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
             return new CvMain(this);
         }
     }
-    
+
     /**
      * Builderクラスからパラメータを受け取りインスタンスを生成する
      * @param param Builderクラスのインスタンス
@@ -76,7 +76,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
         capture = cvCreateCameraCapture(param.camera);
         cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_WIDTH, param.width);
         cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_HEIGHT, param.height);
-        
+
         // デバッグ用設定
         debug = param.debug;
         if (debug) {
@@ -90,19 +90,19 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
                 }
             });
             canvas.put("Source", tmp);
-            
+
             createCanvas("Hough");
             createCanvas("ROI View");
         }
         _setVisible(debug);
     }
-    
+
     @Override
     public void start() {
         runnable = true;
         super.start();
     }
-    
+
     /**
      * 実行中のスレッドを停止する
      * @since 2011/11/22
@@ -110,23 +110,13 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
     public synchronized void halt() {
         runnable = false;
     }
-    
+
     @Override
     public void run() {
-        
         while (runnable) {
-            try {
-                curThread = new AnalyticProcess(_captureFrame(), debug, this);
-                curThread.start();
-                // スレッドの実行が終了するまで待機
-                curThread.join();
-            } catch (IllegalThreadStateException e) {
-                continue;
-            } catch (InterruptedException e) {
-                curThread = null;
-                break;
-            }
-            
+            curThread = new AnalyticProcess(_captureFrame(), debug, this);
+            curThread.run();
+
             // GCを強制呼び出し
             curThread = null;
             Runtime.getRuntime().gc();
@@ -144,7 +134,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
             }
         }
     }
-    
+
     @Override
     public final void showImage(String key, IplImage image) {
         synchronized(this) {
@@ -155,7 +145,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
             }
         }
     }
-    
+
     /**
      * カメラから画像をキャプチャし，結果を返す
      * <pre>
@@ -171,7 +161,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
         showImage("Source", capFrame);
         return capFrame;
     }
-    
+
     /**
      * デバッグ用CanvasFrameの表示/非表示を切り替える
      * @param b 表示/非表示
@@ -182,7 +172,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
             f.setVisible(b);
         }
     }
-    
+
     public static void main(String[] args) {
         CvMain cv = new CvMain.Builder(0).debug(true).build();
         cv.start();
