@@ -1,5 +1,6 @@
 package org.ubilab.cicp2011.cv;
 
+import java.util.HashMap;
 import javax.swing.JFrame;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -18,23 +19,26 @@ import static com.googlecode.javacv.cpp.opencv_highgui.*;
  * @author atsushi-o
  * @since 2011/11/17
  */
-public class CvMain {
+public class CvMain implements AnalyticProcessDelegate {
     private CvCapture capture;
-    private CvRect ROIrect;
     private boolean debug;
-    private static final CanvasFrame src;
+    private static final HashMap<String, CanvasFrame> canvas;
     
     static {
-        src = new CanvasFrame("Source");
-        src.setVisible(false);
-        src.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        src.addWindowListener(new WindowAdapter() {
-			// ウィンドウが閉じるときに呼ばれる
-			@Override
-			public void windowClosing(WindowEvent e) {
-				AnalyticProcess.releaseMemStorage();
-			}
-		});
+        canvas = new HashMap<String, CanvasFrame>();
+        String[] keys = {"Source", "Hough", "ROI View"};
+        for (int i = 0; i < keys.length; i++) {
+            CanvasFrame tmp = new CanvasFrame(keys[i]);
+            tmp.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            tmp.addWindowListener(new WindowAdapter() {
+                // ウィンドウが閉じるときに呼ばれる
+                @Override
+                public void windowClosing(WindowEvent e) {
+                        AnalyticProcess.releaseMemStorage();
+                }
+            });
+            canvas.put(keys[i], tmp);
+        }
     }
 
     /**
@@ -83,11 +87,11 @@ public class CvMain {
         capture = cvCreateCameraCapture(param.camera);
         cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_WIDTH, param.width);
         cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_HEIGHT, param.height);
-        src.setVisible(param.debug);
         debug = param.debug;
+        _setVisible(debug);
         
         while (true) {
-            AnalyticProcess thread = new AnalyticProcess(_captureFrame(), debug);
+            AnalyticProcess thread = new AnalyticProcess(_captureFrame(), debug, this);
             thread.start();
             try {
                 // スレッドの実行が終了するまで待機
@@ -95,6 +99,14 @@ public class CvMain {
             } catch (InterruptedException e) {
                 
             }
+        }
+    }
+
+    @Override
+    public void showImage(String key, IplImage image) {
+        synchronized(this) {
+            if (canvas.containsKey(key))
+                canvas.get(key).showImage(image);
         }
     }
     
@@ -111,8 +123,19 @@ public class CvMain {
     private IplImage _captureFrame() {
         IplImage capFrame;
         capFrame = cvQueryFrame(capture);
-        src.showImage(capFrame);
+        canvas.get("Source").showImage(capFrame);
         return capFrame;
+    }
+    
+    /**
+     * デバッグ用CanvasFrameの表示/非表示を切り替える
+     * @param b 表示/非表示
+     * @since 2011/11/21
+     */
+    private void _setVisible(boolean b) {
+        for (CanvasFrame f : canvas.values()) {
+            f.setVisible(b);
+        }
     }
     
     public static void main(String[] args) {

@@ -1,13 +1,9 @@
 package org.ubilab.cicp2011.cv;
 
-import javax.swing.JFrame;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import com.googlecode.javacpp.Pointer;
 import com.googlecode.javacv.*;
 import static com.googlecode.javacv.cpp.opencv_core.*;
 import static com.googlecode.javacv.cpp.opencv_imgproc.*;
-import static com.googlecode.javacv.cpp.opencv_highgui.*;
 import static com.googlecode.javacpp.Loader.*;
 
 /**
@@ -20,35 +16,14 @@ import static com.googlecode.javacpp.Loader.*;
  * @since 2011/11/17
  */
 public class AnalyticProcess extends Thread {
-    private static final CanvasFrame hough;
-    private static final CanvasFrame roi;
     private static final CvMemStorage storage;
     private IplImage src = null;
     private CvSize srcSize = null;
     private CvRect roiRect = null;
     private CvSize roiSize = null;
+    private AnalyticProcessDelegate delegate = null;
     
     static {
-        hough = new CanvasFrame("Hough");
-        hough.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        hough.setVisible(false);
-        hough.addWindowListener(new WindowAdapter() {
-			// ウィンドウが閉じるときに呼ばれる
-			@Override
-			public void windowClosing(WindowEvent e) {
-				releaseMemStorage();
-			}
-		});
-        roi = new CanvasFrame("ROI View");
-        roi.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        roi.setVisible(false);
-        roi.addWindowListener(new WindowAdapter() {
-			// ウィンドウが閉じるときに呼ばれる
-			@Override
-			public void windowClosing(WindowEvent e) {
-				releaseMemStorage();
-			}
-		});
         storage = CvMemStorage.create();
     }
     
@@ -58,23 +33,33 @@ public class AnalyticProcess extends Thread {
      * @since 2011/11/17
      */
     public AnalyticProcess(IplImage input) {
-        this(input, false);
+        this(input, false, null);
     }
     
     /**
-     * メイン画像処理スレッドのインスタンスをデバッグフラグを指定して生成する
+     * メイン画像処理スレッドのインスタンスをdelegateクラスを指定して生成する（デバッグフラグON）
      * @param input 処理対象のフレーム
-     * @param db デバッグフラグ
+     * @param instance delegateクラスのインスタンス
      * @since 2011/11/21
      */
-    public AnalyticProcess(IplImage input, boolean db) {
+    public AnalyticProcess(IplImage input, AnalyticProcessDelegate instance) {
+        this(input, true, instance);
+    }
+    
+    /**
+     * メイン画像処理スレッドのインスタンスをデバッグフラグとdelegateクラスを指定して生成する
+     * @param input 処理対象のフレーム
+     * @param db デバッグフラグ
+     * @param instance delegateクラスのインスタンス
+     * @since 2011/11/21
+     */
+    public AnalyticProcess(IplImage input, boolean db, AnalyticProcessDelegate instance) {
         super();
         src = input;
         srcSize = cvGetSize(input);
         
-        // デバッグ時は処理途中のフレームを表示
-        hough.setVisible(db);
-        roi.setVisible(db);
+        // デリゲートクラスのインスタンスを保持
+        delegate = instance;
     }
     
     /**
@@ -153,7 +138,7 @@ public class AnalyticProcess extends Thread {
         roiSize = cvSize(roiRect.width(), roiRect.height());
         
         cvRectangle(colorDst, cvPoint(roiRect.x(), roiRect.y()), cvPoint(roiRect.x()+roiRect.width(), roiRect.y()+roiRect.height()), CV_RGB(0, 255, 0), 2, CV_AA, 0);
-        hough.showImage(colorDst);
+        delegate.showImage("Hough", colorDst);
         
         // 後処理
         cvReleaseImage(tmp);
@@ -221,7 +206,7 @@ public class AnalyticProcess extends Thread {
         System.out.println("検出された升目の数： "+count);
         
         // 結果を出力
-        roi.showImage(input);
+        delegate.showImage("ROI View", input);
         
         cvReleaseImage(tmp1);
         cvReleaseImage(tmp2);
