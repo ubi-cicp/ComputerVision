@@ -24,6 +24,7 @@ public class CvMain implements AnalyticProcessDelegate {
     private boolean debug;
     private static final HashMap<String, CanvasFrame> canvas;
     private AnalyticProcess curThread = null;
+    
     static {
         canvas = new HashMap<String, CanvasFrame>();
     }
@@ -105,6 +106,7 @@ public class CvMain implements AnalyticProcessDelegate {
                 curThread = null;
                 break;
             }
+            curThread = null;
         }
     }
 
@@ -141,8 +143,7 @@ public class CvMain implements AnalyticProcessDelegate {
      * @since 2011/11/17
      */
     private IplImage _captureFrame() {
-        IplImage capFrame;
-        capFrame = cvQueryFrame(capture);
+        IplImage capFrame = cvQueryFrame(capture);
         showImage("Source", capFrame);
         return capFrame;
     }

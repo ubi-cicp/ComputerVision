@@ -62,6 +62,12 @@ public class AnalyticProcess extends Thread {
         delegate = instance;
     }
     
+    @Override
+    public void finalize() throws Throwable {
+        super.finalize();
+        //cvReleaseImage(src);
+    }
+    
     /**
      * 主メモリストレージを解放する
      */
@@ -84,7 +90,11 @@ public class AnalyticProcess extends Thread {
 
             // ます検出
             getRects(roiFrame);
+            
+            cvReleaseImage(roiFrame);
         }
+        
+        cvClearMemStorage(storage);
     }
     
     /**
@@ -193,8 +203,9 @@ public class AnalyticProcess extends Thread {
         // 各チャンネル処理
         //for (int i = 1; i <= 3; i++) {
             // COI設定・切り出し処理
-            cvSetImageCOI(input, 1);
-            cvCopy(input, tmp1);
+            //cvSetImageCOI(input, 1);
+            //cvCopy(input, tmp1);
+            cvCvtColor(input, tmp1, CV_RGB2GRAY);
             
             // エッジ検出
             cvCanny(tmp1, tmp2, 80.0, 300.0, 3);
