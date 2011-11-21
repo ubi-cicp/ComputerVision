@@ -1,6 +1,8 @@
 package org.ubilab.cicp2011.cv;
 
 import javax.swing.JFrame;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import com.googlecode.javacpp.Pointer;
 import com.googlecode.javacv.*;
 import static com.googlecode.javacv.cpp.opencv_core.*;
@@ -30,9 +32,23 @@ public class AnalyticProcess extends Thread {
         hough = new CanvasFrame("Hough");
         hough.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         hough.setVisible(false);
+        hough.addWindowListener(new WindowAdapter() {
+			// ウィンドウが閉じるときに呼ばれる
+			@Override
+			public void windowClosing(WindowEvent e) {
+				releaseMemStorage();
+			}
+		});
         roi = new CanvasFrame("ROI View");
         roi.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         roi.setVisible(false);
+        roi.addWindowListener(new WindowAdapter() {
+			// ウィンドウが閉じるときに呼ばれる
+			@Override
+			public void windowClosing(WindowEvent e) {
+				releaseMemStorage();
+			}
+		});
         storage = CvMemStorage.create();
     }
     
@@ -59,6 +75,13 @@ public class AnalyticProcess extends Thread {
         // デバッグ時は処理途中のフレームを表示
         hough.setVisible(db);
         roi.setVisible(db);
+    }
+    
+    /**
+     * 主メモリストレージを解放する
+     */
+    public static synchronized final void releaseMemStorage() {
+        cvReleaseMemStorage(storage);
     }
     
     /**
