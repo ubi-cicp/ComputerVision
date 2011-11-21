@@ -21,6 +21,7 @@ import static com.googlecode.javacv.cpp.opencv_highgui.*;
 public class CvMain {
     private CvCapture capture;
     private CvRect ROIrect;
+    private boolean debug;
     private static final CanvasFrame src;
     
     static {
@@ -35,7 +36,7 @@ public class CvMain {
 			}
 		});
     }
-    
+
     /**
      * CvMainのインスタンス生成クラス
      * @since 2011/11/21
@@ -83,9 +84,10 @@ public class CvMain {
         cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_WIDTH, param.width);
         cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_HEIGHT, param.height);
         src.setVisible(param.debug);
+        debug = param.debug;
         
         while (true) {
-            AnalyticProcess thread = new AnalyticProcess(_captureFrame(), true);
+            AnalyticProcess thread = new AnalyticProcess(_captureFrame(), debug);
             thread.start();
             try {
                 // スレッドの実行が終了するまで待機
