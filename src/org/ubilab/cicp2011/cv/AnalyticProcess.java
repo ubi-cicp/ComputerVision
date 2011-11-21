@@ -29,8 +29,10 @@ public class AnalyticProcess extends Thread {
     static {
         hough = new CanvasFrame("Hough");
         hough.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        hough.setVisible(false);
         roi = new CanvasFrame("ROI View");
         roi.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        roi.setVisible(false);
         storage = CvMemStorage.create();
     }
     
@@ -40,9 +42,23 @@ public class AnalyticProcess extends Thread {
      * @since 2011/11/17
      */
     public AnalyticProcess(IplImage input) {
+        this(input, false);
+    }
+    
+    /**
+     * メイン画像処理スレッドのインスタンスをデバッグフラグを指定して生成する
+     * @param input 処理対象のフレーム
+     * @param db デバッグフラグ
+     * @since 2011/11/21
+     */
+    public AnalyticProcess(IplImage input, boolean db) {
         super();
         src = input;
         srcSize = cvGetSize(input);
+        
+        // デバッグ時は処理途中のフレームを表示
+        hough.setVisible(db);
+        roi.setVisible(db);
     }
     
     /**
@@ -54,7 +70,7 @@ public class AnalyticProcess extends Thread {
         // 盤検出
         getROI(src);
         
-        /* TODO: 領域切り出しがうまくいかない．ROI検出の時点でミスが？ */
+        // TODO: 領域切り出しがうまくいかない．ROI検出の時点でミスが？
         if (roiRect.width() * roiRect.height() > 0) {
         // ROI領域切り出し
         IplImage roiFrame = cvCreateImage(roiSize, IPL_DEPTH_8U, 3);
@@ -113,6 +129,7 @@ public class AnalyticProcess extends Thread {
         roiRect = cvBoundingRect(points, 0);
         roiSize = cvSize(roiRect.width(), roiRect.height());
         
+        cvRectangle(colorDst, cvPoint(roiRect.x(), roiRect.y()), cvPoint(roiRect.x()+roiRect.width(), roiRect.y()+roiRect.height()), CV_RGB(0, 255, 0), 2, CV_AA, 0);
         hough.showImage(colorDst);
         
         // 後処理

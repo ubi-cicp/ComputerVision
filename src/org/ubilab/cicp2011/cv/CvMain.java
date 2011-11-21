@@ -42,7 +42,7 @@ public class CvMain {
         cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_HEIGHT, height);
         
         while (true) {
-            AnalyticProcess thread = new AnalyticProcess(_captureFrame());
+            AnalyticProcess thread = new AnalyticProcess(_captureFrame(), true);
             thread.start();
             try {
                 // スレッドの実行が終了するまで待機
