@@ -21,10 +21,28 @@ public class AnalyticProcess extends Thread {
     private CvSize srcSize = null;
     private CvRect roiRect = null;
     private CvSize roiSize = null;
+    private boolean debug = false;
     private AnalyticProcessDelegate delegate = null;
     
     static {
         storage = CvMemStorage.create();
+    }
+    
+    /**
+     * メイン画像処理スレッドのインスタンスを生成する
+     * @since 2011/11/22
+     */
+    public AnalyticProcess() {
+        this(null, false, null);
+    }
+    
+    /**
+     * メイン画像処理スレッドのインスタンスをデバッグモードで生成する
+     * @param instance delegateクラスのインスタンス
+     * @since 2011/11/22
+     */
+    public AnalyticProcess(AnalyticProcessDelegate instance) {
+        this(null, true, instance);
     }
     
     /**
@@ -55,8 +73,11 @@ public class AnalyticProcess extends Thread {
      */
     public AnalyticProcess(IplImage input, boolean db, AnalyticProcessDelegate instance) {
         super();
-        src = input;
-        srcSize = cvGetSize(input);
+        if (input != null) {
+            src = input;
+            srcSize = cvGetSize(input);
+        }
+        debug = db;
         
         // デリゲートクラスのインスタンスを保持
         delegate = instance;
@@ -65,7 +86,7 @@ public class AnalyticProcess extends Thread {
     @Override
     public void finalize() throws Throwable {
         super.finalize();
-        //cvReleaseImage(src);
+        //if (src != null) cvReleaseImage(src);
     }
     
     /**
@@ -73,6 +94,45 @@ public class AnalyticProcess extends Thread {
      */
     public static synchronized final void releaseMemStorage() {
         cvReleaseMemStorage(storage);
+    }
+    
+    /**
+     * Imageを指定したkeyのCanvasFrameに表示する
+     * @param key CanvasFrame名
+     * @param image 表示する画像
+     * @see AnalyticProcessDelegate#showImage(java.lang.String, com.googlecode.javacv.cpp.opencv_core.IplImage) 
+     * @since 2011/11/22
+     */
+    private void showImage(String key, IplImage image) {
+        if (debug && delegate != null) {
+            delegate.showImage(key, image);
+        }
+    }
+    
+    /**
+     * 処理対象のフレームを設定する
+     * @param source 処理対象のフレーム
+     * @throws IllegalThreadStateException スレッドが既に実行中の場合
+     * @since 2011/11/22
+     */
+    public synchronized void setSource(IplImage source) throws IllegalThreadStateException {
+        if (this.isAlive()) {
+            throw new IllegalThreadStateException("Thread is already running.");
+        } else {
+            src = source;
+            srcSize = cvGetSize(source);
+        }
+    }
+    
+    /**
+     * 処理対象のフレームを指定して処理を開始する
+     * @param source 処理対象のフレーム
+     * @throws IllegalThreadStateException スレッドが既に実行中の場合
+     * @since 2011/11/22
+     */
+    public synchronized void start(IplImage source) throws IllegalThreadStateException {
+        setSource(source);
+        start();
     }
     
     /**
@@ -145,7 +205,7 @@ public class AnalyticProcess extends Thread {
         roiSize = cvSize(roiRect.width(), roiRect.height());
         
         cvRectangle(colorDst, cvPoint(roiRect.x(), roiRect.y()), cvPoint(roiRect.x()+roiRect.width(), roiRect.y()+roiRect.height()), CV_RGB(0, 255, 0), 2, CV_AA, 0);
-        delegate.showImage("Hough", colorDst);
+        showImage("Hough", colorDst);
         
         // 後処理
         cvReleaseImage(tmp);
@@ -235,7 +295,7 @@ public class AnalyticProcess extends Thread {
         System.out.println("検出された升目の数： "+count);
         
         // 結果を出力
-        delegate.showImage("ROI View", input);
+        showImage("ROI View", input);
         
         cvReleaseImage(tmp1);
         cvReleaseImage(tmp2);

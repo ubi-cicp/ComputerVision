@@ -19,8 +19,9 @@ import static com.googlecode.javacv.cpp.opencv_highgui.*;
  * @author atsushi-o
  * @since 2011/11/17
  */
-public class CvMain implements AnalyticProcessDelegate {
+public class CvMain extends Thread implements AnalyticProcessDelegate {
     private CvCapture capture;
+    private boolean runnable = true;
     private boolean debug;
     private static final HashMap<String, CanvasFrame> canvas;
     private AnalyticProcess curThread = null;
@@ -85,8 +86,7 @@ public class CvMain implements AnalyticProcessDelegate {
                 // ウィンドウが閉じるときに呼ばれる
                 @Override
                 public void windowClosing(WindowEvent e) {
-                    curThread.stop();
-                    AnalyticProcess.releaseMemStorage();
+                    halt();
                 }
             });
             canvas.put("Source", tmp);
@@ -95,19 +95,39 @@ public class CvMain implements AnalyticProcessDelegate {
             createCanvas("ROI View");
         }
         _setVisible(debug);
-        
-        while (true) {
-            curThread = new AnalyticProcess(_captureFrame(), debug, this);
-            curThread.start();
+    }
+    
+    @Override
+    public void start() {
+        runnable = true;
+        super.start();
+    }
+    
+    /**
+     * 実行中のスレッドを停止する
+     * @since 2011/11/22
+     */
+    public synchronized void halt() {
+        runnable = false;
+    }
+    
+    @Override
+    public void run() {
+        curThread = new AnalyticProcess(null, debug, this);
+        while (runnable) {
             try {
+                curThread.start(_captureFrame());
                 // スレッドの実行が終了するまで待機
                 curThread.join();
+            } catch (IllegalThreadStateException e) {
+                continue;
             } catch (InterruptedException e) {
                 curThread = null;
                 break;
             }
-            curThread = null;
         }
+        curThread = null;
+        AnalyticProcess.releaseMemStorage();
     }
 
     @Override
@@ -160,7 +180,7 @@ public class CvMain implements AnalyticProcessDelegate {
     }
     
     public static void main(String[] args) {
-        new CvMain.Builder(0).debug(true).build();
-        System.exit(0);
+        CvMain cv = new CvMain.Builder(0).debug(true).build();
+        cv.start();
     }
 }
