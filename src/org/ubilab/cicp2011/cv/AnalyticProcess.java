@@ -204,6 +204,24 @@ public class AnalyticProcess extends Thread {
     }
     
     /**
+     * 画像のダウン・アップサンプリングを行いノイズを除去する
+     * @param input 入力画像
+     * @return 処理済みの画像
+     * @since 2011/11/22
+     */
+    public IplImage resamplingImage(IplImage input) {
+        CvSize half = cvSize(srcSize.width()/2, srcSize.height()/2);
+        IplImage tmp = cvCreateImage(half, IPL_DEPTH_8U, 3);
+        
+        cvPyrDown(input, tmp, CV_GAUSSIAN_5x5);
+        cvPyrUp(tmp, input, CV_GAUSSIAN_5x5);
+        
+        cvReleaseImage(tmp);
+        
+        return input;
+    }
+    
+    /**
      * マス目を検出する
      * @param input 入力画像
      * @since 2011/11/17
