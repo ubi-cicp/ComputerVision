@@ -113,10 +113,11 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
     
     @Override
     public void run() {
-        curThread = new AnalyticProcess(null, debug, this);
+        
         while (runnable) {
             try {
-                curThread.start(_captureFrame());
+                curThread = new AnalyticProcess(_captureFrame(), debug, this);
+                curThread.start();
                 // スレッドの実行が終了するまで待機
                 curThread.join();
             } catch (IllegalThreadStateException e) {
@@ -125,8 +126,11 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
                 curThread = null;
                 break;
             }
+            
+            // GCを強制呼び出し
+            curThread = null;
+            Runtime.getRuntime().gc();
         }
-        curThread = null;
         AnalyticProcess.releaseMemStorage();
     }
 

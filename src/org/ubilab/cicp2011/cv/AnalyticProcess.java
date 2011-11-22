@@ -30,23 +30,6 @@ public class AnalyticProcess extends Thread {
     
     /**
      * メイン画像処理スレッドのインスタンスを生成する
-     * @since 2011/11/22
-     */
-    public AnalyticProcess() {
-        this(null, false, null);
-    }
-    
-    /**
-     * メイン画像処理スレッドのインスタンスをデバッグモードで生成する
-     * @param instance delegateクラスのインスタンス
-     * @since 2011/11/22
-     */
-    public AnalyticProcess(AnalyticProcessDelegate instance) {
-        this(null, true, instance);
-    }
-    
-    /**
-     * メイン画像処理スレッドのインスタンスを生成する
      * @param input 処理対象のフレーム
      * @since 2011/11/17
      */
@@ -73,10 +56,8 @@ public class AnalyticProcess extends Thread {
      */
     public AnalyticProcess(IplImage input, boolean db, AnalyticProcessDelegate instance) {
         super();
-        if (input != null) {
-            src = input;
-            srcSize = cvGetSize(input);
-        }
+        src = input;
+        srcSize = cvGetSize(input);
         debug = db;
         
         // デリゲートクラスのインスタンスを保持
@@ -107,32 +88,6 @@ public class AnalyticProcess extends Thread {
         if (debug && delegate != null) {
             delegate.showImage(key, image);
         }
-    }
-    
-    /**
-     * 処理対象のフレームを設定する
-     * @param source 処理対象のフレーム
-     * @throws IllegalThreadStateException スレッドが既に実行中の場合
-     * @since 2011/11/22
-     */
-    public synchronized void setSource(IplImage source) throws IllegalThreadStateException {
-        if (this.isAlive()) {
-            throw new IllegalThreadStateException("Thread is already running.");
-        } else {
-            src = source;
-            srcSize = cvGetSize(source);
-        }
-    }
-    
-    /**
-     * 処理対象のフレームを指定して処理を開始する
-     * @param source 処理対象のフレーム
-     * @throws IllegalThreadStateException スレッドが既に実行中の場合
-     * @since 2011/11/22
-     */
-    public synchronized void start(IplImage source) throws IllegalThreadStateException {
-        setSource(source);
-        start();
     }
     
     /**
