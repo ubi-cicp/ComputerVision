@@ -226,7 +226,7 @@ public class AnalyticProcess extends Thread {
             cvCanny(tmp1, tmp2, 80.0, 300.0, 3);
             
             // エッジ強調
-            //cvDilate(tmp2, tmp2);
+            cvDilate(tmp2, tmp2, null, 1);
             
             // 輪郭端点抽出
             CvSeq contours = new CvSeq(null);
@@ -239,7 +239,7 @@ public class AnalyticProcess extends Thread {
                 double area = cvContourArea(contours, CV_WHOLE_SEQ, 0);
                 
                 // 閾値による升目判定
-                if (area > 1050*4 && area < 2100*4) {
+                if (area > 1050*4 && area < 2100*4){
                     // 輪郭端点表示用：輪郭
                     cvDrawContours(input, contours, CV_RGB(255, 0, 0), CV_RGB(0, 255, 0), -1, 2, CV_AA, cvPoint(0, 0));
                     count++;
