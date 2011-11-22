@@ -1,6 +1,8 @@
 package org.ubilab.cicp2011.cv;
 
 import java.util.HashMap;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import javax.swing.JFrame;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -24,10 +26,12 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
     private boolean runnable = true;
     private boolean debug;
     private static final HashMap<String, CanvasFrame> canvas;
+    private static final Logger logger;
     private AnalyticProcess curThread = null;
     
     static {
         canvas = new HashMap<String, CanvasFrame>();
+        logger = Logger.getLogger(CvMain.class.getName());
     }
 
     /**
@@ -95,10 +99,13 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
             createCanvas("ROI View");
         }
         _setVisible(debug);
+        
+        logger.log(Level.INFO, "CvMain start: camera{0} ({1}x{2}) {3}", new Object[]{param.camera, param.width, param.height, debug?"DEBUG":""});
     }
     
     @Override
     public void start() {
+        logger.info("Thread start");
         runnable = true;
         super.start();
     }
@@ -108,12 +115,12 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
      * @since 2011/11/22
      */
     public synchronized void halt() {
+        logger.info("Thread stop");
         runnable = false;
     }
     
     @Override
     public void run() {
-        
         while (runnable) {
             try {
                 curThread = new AnalyticProcess(_captureFrame(), debug, this);
@@ -136,6 +143,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
 
     @Override
     public final void createCanvas(String key) {
+        logger.log(Level.INFO, "Create New CanvasFrame: {0}", key);
         synchronized(this) {
             if (!canvas.containsKey(key)) {
                 CanvasFrame tmp = new CanvasFrame(key);
