@@ -31,7 +31,7 @@ public class ShogiMove implements Serializable {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(piece.getPlayer()==0?"▲":"△");
+        StringBuilder sb = new StringBuilder(piece.getPlayer().getCharacter());
         sb.append(dst.toString());
         sb.append(piece.getType().getCharacter(piece.isPromote()|promote));
         sb.append(promote?"成":"不成");
