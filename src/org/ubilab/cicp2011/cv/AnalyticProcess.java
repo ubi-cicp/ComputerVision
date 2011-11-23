@@ -271,7 +271,7 @@ public class AnalyticProcess extends Thread {
             }
             contours = contours.h_next();
         }
-        logger.log(Level.fine, "検出された升目の数: {0}", count);
+        logger.log(Level.FINE, "検出された升目の数: {0}", count);
 
         // 結果を出力
         showImage("ROI View", input);
