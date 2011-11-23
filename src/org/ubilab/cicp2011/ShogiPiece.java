@@ -155,11 +155,10 @@ public class ShogiPiece implements Serializable {
             return ((flag & flagTable[diff.x()+2][diff.y()+2]) > 0)? true:false;
         }
     }
-    
+     
     private ShogiPieceType type;
-    private ShogiPos pos;
     private boolean isPromote;
-    private int player;
+    private ShogiPlayer player;
     
     /**
      * 将棋駒をひとつ生成
@@ -168,9 +167,8 @@ public class ShogiPiece implements Serializable {
      * @param player 駒の所有プレーヤ
      * @since 2011/11/23
      */
-    public ShogiPiece(ShogiPieceType type, ShogiPos pos, int player) {
+    public ShogiPiece(ShogiPieceType type, ShogiPlayer player) {
         this.type = type;
-        this.pos = pos;
         this.isPromote = false;
         this.player = player;
     }
@@ -182,12 +180,6 @@ public class ShogiPiece implements Serializable {
      */
     public ShogiPieceType getType() { return this.type; }
     /**
-     * 駒の位置を取得
-     * @return 駒の位置
-     * @since 2011/11/23
-     */
-    public ShogiPos getPos()        { return this.pos; }
-    /**
      * 成っているかどうかを取得
      * @return 成っているかどうか
      * @since 2011/11/23
@@ -198,13 +190,13 @@ public class ShogiPiece implements Serializable {
      * @return 駒の所有プレーヤ
      * @since 2011/11/23
      */
-    public int getPlayer()          { return this.player; }
+    public ShogiPlayer getPlayer()          { return this.player; }
     /**
      * 駒の所有プレーヤを変更
      * @param p 変更するプレーヤ
      * @since 2011/11/23
      */
-    public void setPlayer(int p)    { this.player = p; }
+    public void setPlayer(ShogiPlayer p)    { this.player = p; }
     /**
      * 駒の名前を取得
      * @return 駒の名前
@@ -216,17 +208,4 @@ public class ShogiPiece implements Serializable {
      * @since 2011/11/23
      */
     public void promote()           { this.isPromote = true; }
-    /**
-     * 駒を移動させる
-     * @param dst 移動先のShogiPos
-     * @return 移動の成否
-     * @since 2011/11/23
-     */
-    public boolean moveTo(ShogiPos dst) {
-        if (type.isMovable(pos, dst, isPromote)) {
-            pos = dst;
-            return true;
-        } else
-            return false;
-    }
 }
