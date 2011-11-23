@@ -163,7 +163,6 @@ public class ShogiPiece implements Serializable {
     /**
      * 将棋駒をひとつ生成
      * @param type 駒の種類
-     * @param pos コマの位置
      * @param player 駒の所有プレーヤ
      * @since 2011/11/23
      */
