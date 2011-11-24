@@ -85,7 +85,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
         debug = param.debug;
         if (debug) {
             CanvasFrame tmp = new CanvasFrame("Source");
-            tmp.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            tmp.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
             tmp.addWindowListener(new WindowAdapter() {
                 // ウィンドウが閉じるときに呼ばれる
                 @Override
