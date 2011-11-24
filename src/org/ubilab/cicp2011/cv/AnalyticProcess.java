@@ -91,7 +91,7 @@ public class AnalyticProcess extends Thread {
      */
     private void showImage(String key, IplImage image) {
         if (debug && delegate != null) {
-            logger.log(Level.INFO, "Call delegate method (showImage) at {0}.", delegate);
+            logger.log(Level.FINER, "Call delegate method (showImage) at {0}.", delegate);
             delegate.showImage(key, image);
         }
     }
