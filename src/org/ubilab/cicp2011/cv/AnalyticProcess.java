@@ -234,18 +234,22 @@ public class AnalyticProcess extends Thread {
      */
     public void getRects(IplImage input) {
         CvSize srcSize = cvGetSize(input);
+        IplImage orig = cvCreateImage(srcSize, IPL_DEPTH_8U, 3);
         IplImage tmp1 = cvCreateImage(srcSize, IPL_DEPTH_8U, 1);
         IplImage tmp2 = cvCreateImage(srcSize, IPL_DEPTH_8U, 1);
         CvMemStorage contoursStorage = cvCreateChildMemStorage(storage);
         CvMemStorage squaresStorage  = cvCreateChildMemStorage(storage);
         CvSeq squares = cvCreateSeq(CV_SEQ_ELTYPE_POINT, sizeof(CvSeq.class), sizeof(CvPoint.class), squaresStorage);
+        
+        // オリジナルを保持
+        cvCopy(input, orig);
 
+        int count = 0;
         // 各チャンネル処理
-        //for (int i = 1; i <= 3; i++) {
+        for (int i = 1; i <= 3; i++) {
             // COI設定・切り出し処理
-            //cvSetImageCOI(input, 1);
-            //cvCopy(input, tmp1);
-            cvCvtColor(input, tmp1, CV_RGB2GRAY);
+            cvSetImageCOI(orig, i);
+            cvCopy(orig, tmp1);
 
             // エッジ検出
             cvCanny(tmp1, tmp2, 80.0, 300.0, 3);
@@ -253,26 +257,43 @@ public class AnalyticProcess extends Thread {
             // エッジ強調
             cvDilate(tmp2, tmp2, null, 1);
 
-            // 輪郭端点抽出
+            // 輪郭検出
             CvSeq contours = new CvSeq(null);
             cvFindContours(tmp2, contoursStorage, contours, sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
-        //}
+            
+            // 検出された輪郭点群を一つ一つ取り出す
+            for (;contours != null && !contours.isNull(); contours = contours.h_next()) {
+                if (contours.elem_size() > 0) {
+                    // ポリライン近似
+                    CvSeq poly = cvApproxPoly(contours, sizeof(CvContour.class), contoursStorage, CV_POLY_APPROX_DP, cvContourPerimeter(contours)*0.02, 0);
 
-        int count = 0;
-        while (contours != null && !contours.isNull()) {
-            if (contours.elem_size() > 0) {
-                double area = cvContourArea(contours, CV_WHOLE_SEQ, 0);
-
-                // 閾値による升目判定
-                if (area > 1050*4 && area < 2100*4){
-                    // 輪郭端点表示用：輪郭
-                    cvDrawContours(input, contours, CV_RGB(255, 0, 0), CV_RGB(0, 255, 0), -1, 2, CV_AA, cvPoint(0, 0));
-                    count++;
+                    // 点数が4点以外の矩形は除外
+                    if (poly.total() != 4) continue;
+                    
+                    // 伸長度計算
+                    double area      = Math.abs(cvContourArea(poly, CV_WHOLE_SEQ, 0));
+                    double perimeter = cvArcLength(poly, CV_WHOLE_SEQ, -1);
+                    double extension = Math.pow(perimeter, 2) / area;
+                    
+                    // 閾値によるマス目判定
+                    if (area > 1050*4 && area < 2100*4){
+                        // 輪郭端点表示用：輪郭
+                        cvDrawContours(input, poly, CvScalar.RED, CvScalar.GREEN, -1, 2, CV_AA, cvPoint(0, 0));
+                        
+                        // 矩形候補を保存
+                        for (int j = 0; j < poly.total(); j++) {
+                            cvSeqPush(squares, cvGetSeqElem(poly, j));
+                        }
+                        
+                        count++;
+                    }
                 }
             }
-            contours = contours.h_next();
+            
+            cvClearMemStorage(contoursStorage);
         }
-        logger.log(Level.FINE, "検出された升目の数: {0}", count);
+
+        logger.log(Level.FINE, "検出されたマス目の数: {0}", count);
 
         // 結果を出力
         showImage("ROI View", input);
