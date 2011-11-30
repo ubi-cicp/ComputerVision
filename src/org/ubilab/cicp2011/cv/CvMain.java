@@ -85,18 +85,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
         // デバッグ用設定
         debug = param.debug;
         if (debug) {
-            CanvasFrame tmp = new CanvasFrame("Source");
-            tmp.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-            tmp.addWindowListener(new WindowAdapter() {
-                // ウィンドウが閉じるときに呼ばれる
-                @Override
-                public void windowClosing(WindowEvent e) {
-                    curThread.interrupt();
-                    quit();
-                }
-            });
-            canvas.put("Source", tmp);
-            
+            createCanvas("Source");
             createCanvas("Hough");
             createCanvas("ROI View");
             
