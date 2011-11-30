@@ -139,6 +139,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
             Runtime.getRuntime().gc();
         }
         AnalyticProcess.releaseMemStorage();
+        disposeAllCanvas();
     }
 
     @Override
@@ -151,6 +152,19 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
                 canvas.put(key, tmp);
             }
         }
+    }
+    
+    /**
+     * すべてのCanvasFrameを閉じてリソースを解放する
+     * @since 2011/11/30
+     */
+    private synchronized void disposeAllCanvas() {
+        logger.info("Close all CanvasFrame");
+        for (CanvasFrame cf : canvas.values()) {
+            cf.setVisible(false);
+            cf.dispose();
+        }
+        canvas.clear();
     }
     
     @Override
@@ -194,5 +208,11 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
     public static void main(String[] args) {
         CvMain cv = new CvMain.Builder(0).debug(true).build();
         cv.start();
+        try {
+            cv.join();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(CvMain.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        System.exit(0);
     }
 }
