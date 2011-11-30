@@ -299,7 +299,7 @@ public class AnalyticProcess extends Thread {
             CvPoint pt2 = new CvPoint(square).position(1);
             CvPoint pt3 = new CvPoint(square).position(2);
             CvPoint pt4 = new CvPoint(square).position(3);
-            System.out.println(String.format("({0}, {1}), ({2}, {3}), ({4}, {5}), ({6}, {7})", pt1.x(), pt1.y(), pt2.x(), pt2.y(), pt3.x(), pt3.y(), pt4.x(), pt4.y()));
+            System.out.println(String.format("(%d, %d), (%d, %d), (%d, %d), (%d, %d)", pt1.x(), pt1.y(), pt2.x(), pt2.y(), pt3.x(), pt3.y(), pt4.x(), pt4.y()));
         }
 
         // 結果を出力
