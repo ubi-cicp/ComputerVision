@@ -21,13 +21,14 @@ import static com.googlecode.javacv.cpp.opencv_highgui.*;
  * @author atsushi-o
  * @since 2011/11/17
  */
-public class CvMain extends Thread implements AnalyticProcessDelegate {
+public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
     private CvCapture capture;
     private boolean runnable = true;
     private boolean debug;
     private static final HashMap<String, CanvasFrame> canvas;
     private static final Logger logger;
     private AnalyticProcess curThread = null;
+    private CvController cController = null;
     
     static {
         canvas = new HashMap<String, CanvasFrame>();
@@ -90,56 +91,46 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
                 // ウィンドウが閉じるときに呼ばれる
                 @Override
                 public void windowClosing(WindowEvent e) {
-                    halt();
+                    curThread.interrupt();
+                    quit();
                 }
             });
             canvas.put("Source", tmp);
             
             createCanvas("Hough");
             createCanvas("ROI View");
+            
+            cController = new CvController();
+            cController.setDelegate(this);
         }
         _setVisible(debug);
         
         logger.log(Level.INFO, "CvMain start: camera{0} ({1}x{2}) {3}", new Object[]{param.camera, param.width, param.height, debug?"DEBUG":""});
     }
-    
+         
     @Override
-    public void start() {
-        logger.info("Thread start");
-        runnable = true;
-        super.start();
-    }
-    
-    /**
-     * 実行中のスレッドを停止する
-     * @since 2011/11/22
-     */
-    public synchronized void halt() {
-        logger.info("Thread stop");
-        runnable = false;
-    }
-    
-    @Override
-    public void run() {
-        while (runnable) {
-            try {
-                curThread = new AnalyticProcess(_captureFrame(), debug, this);
-                curThread.start();
-                // スレッドの実行が終了するまで待機
-                curThread.join();
-            } catch (IllegalThreadStateException e) {
-                continue;
-            } catch (InterruptedException e) {
-                curThread = null;
-                break;
-            }
-            
-            // GCを強制呼び出し
+    public void capture() {
+        try {
+            curThread = new AnalyticProcess(_captureFrame(), debug, this);
+            curThread.start();
+            // スレッドの実行が終了するまで待機
+            curThread.join();
+        } catch (IllegalThreadStateException e) {
+        } catch (InterruptedException e) {
+        } finally {
             curThread = null;
-            Runtime.getRuntime().gc();
         }
+        
+        // GCを強制呼び出し
+        Runtime.getRuntime().gc();
+    }
+
+    @Override
+    public void quit() {
         AnalyticProcess.releaseMemStorage();
         disposeAllCanvas();
+        cController.dispose();
+        System.exit(0);
     }
 
     @Override
@@ -177,7 +168,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
             }
         }
     }
-    
+
     /**
      * カメラから画像をキャプチャし，結果を返す
      * <pre>
@@ -206,13 +197,6 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
     }
     
     public static void main(String[] args) {
-        CvMain cv = new CvMain.Builder(0).debug(true).build();
-        cv.start();
-        try {
-            cv.join();
-        } catch (InterruptedException ex) {
-            Logger.getLogger(CvMain.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        System.exit(0);
+        new CvMain.Builder(0).debug(true).build();
     }
 }
