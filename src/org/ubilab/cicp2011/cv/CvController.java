@@ -94,7 +94,14 @@ public class CvController extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
+    /**
+     * テキストエリアの文を更新する
+     * @param str 表示する文
+     * @since 2011/11/30
+     */
+    public void updateJTextArea(String str) {
+        jTextArea1.setText(str);
+    }
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         if (delegate != null) delegate.capture();
     }//GEN-LAST:event_jButton1ActionPerformed

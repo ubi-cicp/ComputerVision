@@ -71,6 +71,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
         }
     }
     
+    
     /**
      * Builderクラスからパラメータを受け取りインスタンスを生成する
      * @param param Builderクラスのインスタンス
