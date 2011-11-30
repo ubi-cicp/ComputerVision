@@ -90,8 +90,9 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
             createCanvas("Hough");
             createCanvas("ROI View");
             
-            cController = new CvController();
+            cController = CvController.getInstance();
             cController.setDelegate(this);
+            cController.setVisible(true);
         }
         _setVisible(debug);
         

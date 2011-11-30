@@ -16,11 +16,24 @@ package org.ubilab.cicp2011.cv;
  * @since 2011/11/30
  */
 public class CvController extends javax.swing.JFrame {
+    private static final CvController instance;
     private CvControllerDelegate delegate;
+    
+    static {
+        instance = new CvController();
+    }
 
     /** Creates new form CvController */
-    public CvController() {
+    private CvController() {
         initComponents();
+    }
+    
+    /**
+     * CvControllerのインスタンスを返す
+     * @return CvControllerのインスタンス
+     */
+    public static CvController getInstance() {
+        return instance;
     }
     
     /**
