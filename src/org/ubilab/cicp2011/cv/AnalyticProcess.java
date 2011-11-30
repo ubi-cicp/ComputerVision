@@ -21,9 +21,7 @@ public class AnalyticProcess extends Thread {
     private static final CvMemStorage storage;
     private static final Logger logger;
     private IplImage src = null;
-    private CvSize srcSize = null;
     private CvRect roiRect = null;
-    private CvSize roiSize = null;
     private boolean debug = false;
     private AnalyticProcessDelegate delegate = null;
 
@@ -61,7 +59,6 @@ public class AnalyticProcess extends Thread {
     public AnalyticProcess(IplImage input, boolean db, AnalyticProcessDelegate instance) {
         super();
         src = input;
-        srcSize = cvGetSize(input);
         debug = db;
 
         // デリゲートクラスのインスタンスを保持
@@ -103,7 +100,7 @@ public class AnalyticProcess extends Thread {
     @Override
     public void run() {
         // 盤検出
-        getROI(src);
+        roiRect = getROI(src);
 
         if (roiRect.width() * roiRect.height() > 0) {
             // ROI領域切り出し
@@ -125,6 +122,7 @@ public class AnalyticProcess extends Thread {
      * @since 2011/11/17
      */
     public CvRect getROI(IplImage input) {
+        CvSize srcSize = cvGetSize(input);
         IplImage colorDst = cvCreateImage(srcSize, IPL_DEPTH_8U, 3);
         //colorDst = IplImage.create(srcSize, IPL_DEPTH_8U, 3);
         IplImage canny = cvCreateImage(srcSize, IPL_DEPTH_8U, 1);
@@ -162,8 +160,7 @@ public class AnalyticProcess extends Thread {
         }
 
         // ROI矩形領域検出
-        roiRect = cvBoundingRect(points, 0);
-        roiSize = cvSize(roiRect.width(), roiRect.height());
+        CvRect roiRect = cvBoundingRect(points, 0);
 
         cvRectangle(colorDst, cvPoint(roiRect.x(), roiRect.y()), cvPoint(roiRect.x()+roiRect.width(), roiRect.y()+roiRect.height()), CV_RGB(0, 255, 0), 2, CV_AA, 0);
         showImage("Hough", colorDst);
@@ -197,6 +194,8 @@ public class AnalyticProcess extends Thread {
      * @since 2011/11/21
      */
     public IplImage getROIView(IplImage input, CvRect roi) {
+        CvSize srcSize = cvGetSize(input);
+        CvSize roiSize = cvSize(roi.width(), roi.height());
         IplImage tmp = cvCreateImage(srcSize, IPL_DEPTH_8U, 3);
         IplImage roiImage = cvCreateImage(roiSize, IPL_DEPTH_8U, 3);
 
@@ -216,6 +215,7 @@ public class AnalyticProcess extends Thread {
      * @since 2011/11/22
      */
     public IplImage resamplingImage(IplImage input) {
+        CvSize srcSize = cvGetSize(input);
         CvSize half = cvSize(srcSize.width()/2, srcSize.height()/2);
         IplImage tmp = cvCreateImage(half, IPL_DEPTH_8U, 3);
 
@@ -233,8 +233,9 @@ public class AnalyticProcess extends Thread {
      * @since 2011/11/17
      */
     public void getRects(IplImage input) {
-        IplImage tmp1 = cvCreateImage(roiSize, IPL_DEPTH_8U, 1);
-        IplImage tmp2 = cvCreateImage(roiSize, IPL_DEPTH_8U, 1);
+        CvSize srcSize = cvGetSize(input);
+        IplImage tmp1 = cvCreateImage(srcSize, IPL_DEPTH_8U, 1);
+        IplImage tmp2 = cvCreateImage(srcSize, IPL_DEPTH_8U, 1);
         CvMemStorage contoursStorage = cvCreateChildMemStorage(storage);
         CvMemStorage squaresStorage  = cvCreateChildMemStorage(storage);
         CvSeq squares = cvCreateSeq(CV_SEQ_ELTYPE_POINT, sizeof(CvSeq.class), sizeof(CvPoint.class), squaresStorage);
