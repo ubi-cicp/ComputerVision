@@ -91,7 +91,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
             cController.setDelegate(this);
             cController.setVisible(true);
         }
-        _setVisible(debug);
+        _setVisible(false);
         
         logger.log(Level.INFO, "CvMain start: camera{0} ({1}x{2}) {3}", new Object[]{param.camera, param.width, param.height, debug?"DEBUG":""});
     }
@@ -150,6 +150,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
             if (!canvas.containsKey(key)) {
                 CanvasFrame tmp = new CanvasFrame(key);
                 tmp.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+                tmp.setVisible(false);
                 canvas.put(key, tmp);
             }
         }
