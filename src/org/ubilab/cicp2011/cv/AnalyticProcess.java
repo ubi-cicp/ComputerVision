@@ -269,27 +269,29 @@ public class AnalyticProcess extends Thread {
         int count = 0;
         // 各チャンネル処理
         for (int i = 1; i <= 3; i++) {
+            _print(String.format("    - チャンネル %d 処理...\n", i));
             // COI設定・切り出し処理
             cvSetImageCOI(orig, i);
             cvCopy(orig, tmp1);
 
             // エッジ検出
-            _print("    - エッジ検出処理...");
+            _print("        - エッジ検出処理...");
             cvCanny(tmp1, tmp2, 80.0, 300.0, 3);
             _print("完了\n");
 
             // エッジ強調
-            _print("    - エッジ強調処理...");
+            _print("        - エッジ強調処理...");
             cvDilate(tmp2, tmp2, null, 1);
             _print("完了\n");
 
             // 輪郭検出
-            _print("    - 輪郭抽出処理...");
+            _print("        - 輪郭抽出処理...");
             CvSeq contours = new CvSeq(null);
             cvFindContours(tmp2, contoursStorage, contours, sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
             _print("完了\n");
 
             // 検出された輪郭点群を一つ一つ取り出す
+            _print("        - 輪郭端点検出・条件判定処理...");
             for (;contours != null && !contours.isNull(); contours = contours.h_next()) {
                 if (contours.elem_size() > 0) {
                     // ポリライン近似
@@ -315,8 +317,11 @@ public class AnalyticProcess extends Thread {
                     }
                 }
             }
+            _print("完了\n");
 
             cvClearMemStorage(contoursStorage);
+            
+            _print(String.format("    - チャンネル %d 処理完了\n", i));
         }
 
         logger.log(Level.FINE, "検出されたマス目の数: {0}", count);
