@@ -112,8 +112,29 @@ public class CvController extends javax.swing.JFrame {
      * @param str 表示する文
      * @since 2011/11/30
      */
-    public void updateJTextArea(String str) {
+    public void updateText(String str) {
         jTextArea1.setText(str);
+    }
+    /**
+     * テキストエリアに文を追記する
+     * @param str 追記する文
+     * @since 2011/12/01
+     */
+    public void addText(String str) {
+        // 改行コード取得
+        String nl = System.getProperty("line.separator");
+        
+        StringBuilder sb = new StringBuilder(jTextArea1.getText());
+        sb.append(nl).append(str);
+        
+        jTextArea1.setText(sb.toString());
+    }
+    /**
+     * テキストエリアを初期化する
+     * @since 2011/12/01
+     */
+    public void clearText() {
+        jTextArea1.setText("");
     }
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         if (delegate != null) delegate.capture();
