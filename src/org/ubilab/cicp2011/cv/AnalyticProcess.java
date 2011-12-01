@@ -104,12 +104,8 @@ public class AnalyticProcess extends Thread {
     public void run() {
         _print("完了\n");
         // 盤検出
-        _print("ROI領域検出処理...");
         roiRect = getROI(src);
-        _print("完了\n");
 
-        _print(String.format("検出ROI領域: (%d, %d), (%d, %d)\n",
-                roiRect.x(), roiRect.y(), roiRect.x()+roiRect.width(), roiRect.y()+roiRect.height()));
         if (roiRect.width() * roiRect.height() > 0) {
             // ROI領域切り出し
             IplImage roiFrame = getROIView(src, roiRect);
@@ -139,22 +135,32 @@ public class AnalyticProcess extends Thread {
         CvMemStorage pointsStorage = cvCreateChildMemStorage(storage);
         CvSeq lines, points;
 
+        _print("ROI領域検出処理...");
         /*
          * 矩形領域検出
          */
         // グレースケールに変更
+        _print("\tグレースケール変換...");
         cvCvtColor(input, tmp, CV_RGB2GRAY);
+        _print("完了\n");
 
         // 単純平滑化
+        _print("\t単純平滑化処理...");
         cvSmooth(tmp, tmp, CV_BLUR, 2);
+        _print("完了\n");
 
         // Canny
+        _print("\tエッジ検出処理...");
         cvCanny(tmp, canny, 50.0, 200.0, 3);
+        _print("完了\n");
 
         // 2値化
+        _print("\t二値化処理...");
         cvThreshold(canny, canny, 128, 255, CV_THRESH_BINARY);
+        _print("完了\n");
 
         // 確率的Hough変換
+        _print("\t確率的Hough変換処理...");
         cvCvtColor(canny, colorDst, CV_GRAY2BGR);
         points = cvCreateSeq(CV_SEQ_ELTYPE_POINT, sizeof(CvSeq.class), sizeof(CvPoint.class), pointsStorage);
         lines = cvHoughLines2(canny, houghStorage, CV_HOUGH_PROBABILISTIC, 1, Math.PI/180, 50, 100, 15);
@@ -166,9 +172,12 @@ public class AnalyticProcess extends Thread {
             cvSeqPush(points, pt2);
             cvLine(colorDst, pt1, pt2, CV_RGB(255, 0, 0), 1, 8, 0);
         }
+        _print("完了\n");
 
         // ROI矩形領域検出
         CvRect roiRect = cvBoundingRect(points, 0);
+        _print(String.format("\t検出ROI領域: (%d, %d), (%d, %d)\n",
+                roiRect.x(), roiRect.y(), roiRect.x()+roiRect.width(), roiRect.y()+roiRect.height()));
 
         cvRectangle(colorDst, cvPoint(roiRect.x(), roiRect.y()), cvPoint(roiRect.x()+roiRect.width(), roiRect.y()+roiRect.height()), CV_RGB(0, 255, 0), 2, CV_AA, 0);
         showImage("Hough", colorDst);
@@ -182,6 +191,7 @@ public class AnalyticProcess extends Thread {
         cvReleaseMemStorage(houghStorage);
         cvReleaseMemStorage(pointsStorage);
 
+        _print("完了\n");
         return roiRect;
     }
 
