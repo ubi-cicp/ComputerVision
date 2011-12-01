@@ -61,6 +61,11 @@ public class CvController extends javax.swing.JFrame {
 
         setTitle("CvController");
         setResizable(false);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                controllerClosing(evt);
+            }
+        });
 
         jButton1.setText("Capture");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
@@ -148,6 +153,11 @@ public class CvController extends javax.swing.JFrame {
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         if (delegate != null) delegate.quit();
     }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void controllerClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_controllerClosing
+        if (delegate != null) delegate.quit();
+    }//GEN-LAST:event_controllerClosing
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
