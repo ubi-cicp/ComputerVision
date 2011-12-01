@@ -121,10 +121,8 @@ public class CvController extends javax.swing.JFrame {
      * @since 2011/12/01
      */
     public void addText(String str) {
-        StringBuilder sb = new StringBuilder(jTextArea1.getText());
-        sb.append(str);
-        
-        jTextArea1.setText(sb.toString());
+        jTextArea1.append(str);
+        jTextArea1.setCaretPosition(jTextArea1.getDocument().getLength());
     }
     /**
      * テキストエリアの文を改行する
