@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import javax.swing.JFrame;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import com.googlecode.javacv.*;
 import static com.googlecode.javacv.cpp.opencv_core.*;
 import static com.googlecode.javacv.cpp.opencv_highgui.*;
@@ -23,7 +21,6 @@ import static com.googlecode.javacv.cpp.opencv_highgui.*;
  */
 public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
     private CvCapture capture;
-    private boolean runnable = true;
     private boolean debug;
     private static final HashMap<String, CanvasFrame> canvas;
     private static final Logger logger;
@@ -101,23 +98,30 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
          
     @Override
     public void capture() {
-        try {
-            curThread = new AnalyticProcess(_captureFrame(), debug, this);
-            curThread.start();
-            // スレッドの実行が終了するまで待機
-            curThread.join();
-        } catch (IllegalThreadStateException e) {
-        } catch (InterruptedException e) {
-        } finally {
-            curThread = null;
-        }
-        
-        // GCを強制呼び出し
-        Runtime.getRuntime().gc();
+        Thread th = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    curThread = new AnalyticProcess(_captureFrame(), debug, CvMain.this);
+                    curThread.start();
+                    // スレッドの実行が終了するまで待機
+                    curThread.join();
+                } catch (IllegalThreadStateException e) {
+                } catch (InterruptedException e) {
+                } finally {
+                    curThread = null;
+                }
+
+                // GCを強制呼び出し
+                Runtime.getRuntime().gc();
+            }
+        });
+        th.start();
     }
 
     @Override
     public void quit() {
+        curThread = null;
         AnalyticProcess.releaseMemStorage();
         disposeAllCanvas();
         cController.dispose();
