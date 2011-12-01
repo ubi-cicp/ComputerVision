@@ -337,7 +337,7 @@ public class AnalyticProcess extends Thread {
         }
 
         // 結果を出力
-        showImage("ROI View", input);
+        showImage("ROI", input);
 
         cvReleaseImage(orig);
         cvReleaseImage(tmp1);
