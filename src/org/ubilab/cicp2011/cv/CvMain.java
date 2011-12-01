@@ -98,6 +98,8 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
          
     @Override
     public void capture() {
+        if (cController != null) cController.clearText();
+        _print("位置推定処理スレッドを開始...");
         Thread th = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -112,8 +114,11 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
                     curThread = null;
                 }
 
+                _print("メモリ解放処理...");
                 // GCを強制呼び出し
                 Runtime.getRuntime().gc();
+                _print("完了\n");
+                _print("=== 位置推定処理終了 ===\n");
             }
         });
         th.start();
@@ -189,6 +194,16 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
         for (CanvasFrame f : canvas.values()) {
             f.setVisible(b);
         }
+    }
+    
+    /**
+     * デバッグ用出力関数
+     * @param str 出力文字列
+     * @since 2011/12/01
+     */
+    private void _print(String str) {
+        if (cController != null) cController.addText(str);
+        else System.out.print(str);
     }
     
     public static void main(String[] args) {

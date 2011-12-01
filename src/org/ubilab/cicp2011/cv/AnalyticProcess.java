@@ -24,6 +24,7 @@ public class AnalyticProcess extends Thread {
     private CvRect roiRect = null;
     private boolean debug = false;
     private AnalyticProcessDelegate delegate = null;
+    private CvController cController = null;
 
     static {
         storage = CvMemStorage.create();
@@ -63,6 +64,8 @@ public class AnalyticProcess extends Thread {
 
         // デリゲートクラスのインスタンスを保持
         delegate = instance;
+        
+        if (db) cController = CvController.getInstance();
     }
 
     @Override
@@ -99,14 +102,19 @@ public class AnalyticProcess extends Thread {
      */
     @Override
     public void run() {
+        _print("完了\n");
         // 盤検出
+        _print("ROI領域検出処理...");
         roiRect = getROI(src);
+        _print("完了\n");
 
+        _print(String.format("検出ROI領域: (%d, %d), (%d, %d)\n",
+                roiRect.x(), roiRect.y(), roiRect.x()+roiRect.width(), roiRect.y()+roiRect.height()));
         if (roiRect.width() * roiRect.height() > 0) {
             // ROI領域切り出し
             IplImage roiFrame = getROIView(src, roiRect);
 
-            // ます検出
+            // マス検出
             getRects(roiFrame);
 
             cvReleaseImage(roiFrame);
@@ -273,6 +281,7 @@ public class AnalyticProcess extends Thread {
             contours = contours.h_next();
         }
         logger.log(Level.FINE, "検出された升目の数: {0}", count);
+        _print(String.format("検出されたマス目の数: %d\n", count));
 
         // 結果を出力
         showImage("ROI View", input);
@@ -282,5 +291,15 @@ public class AnalyticProcess extends Thread {
         cvClearSeq(squares);
         cvReleaseMemStorage(contoursStorage);
         cvReleaseMemStorage(squaresStorage);
+    }
+    
+    /**
+     * デバッグ用出力関数
+     * @param str 出力文字列
+     * @since 2011/12/01
+     */
+    private void _print(String str) {
+        if (cController != null) cController.addText(str);
+        else System.out.print(str);
     }
 }
