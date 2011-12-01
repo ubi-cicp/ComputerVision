@@ -85,7 +85,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
         if (debug) {
             createCanvas("Source");
             createCanvas("Hough");
-            createCanvas("ROI View");
+            createCanvas("ROI");
             
             cController = CvController.getInstance();
             cController.setDelegate(this);
@@ -122,6 +122,16 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
             }
         });
         th.start();
+    }
+    
+    @Override
+    public void setVisible(String key, boolean b) {
+        synchronized(this) {
+            if (canvas.containsKey(key)) {
+                CanvasFrame f = canvas.get(key);
+                f.setVisible(b);
+            }
+        }
     }
 
     @Override
