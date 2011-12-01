@@ -106,6 +106,9 @@ public class AnalyticProcess extends Thread {
         // 盤検出
         roiRect = getROI(src);
 
+        _print(String.format("* 検出ROI領域: (%d, %d), (%d, %d)\n",
+                roiRect.x(), roiRect.y(), roiRect.x()+roiRect.width(), roiRect.y()+roiRect.height()));
+        
         if (roiRect.width() * roiRect.height() > 0) {
             // ROI領域切り出し
             IplImage roiFrame = getROIView(src, roiRect);
@@ -135,32 +138,32 @@ public class AnalyticProcess extends Thread {
         CvMemStorage pointsStorage = cvCreateChildMemStorage(storage);
         CvSeq lines, points;
 
-        _print("ROI領域検出処理...");
+        _print("ROI領域検出処理...\n");
         /*
          * 矩形領域検出
          */
         // グレースケールに変更
-        _print("\tグレースケール変換...");
+        _print("    - グレースケール変換...");
         cvCvtColor(input, tmp, CV_RGB2GRAY);
         _print("完了\n");
 
         // 単純平滑化
-        _print("\t単純平滑化処理...");
+        _print("    - 単純平滑化処理...");
         cvSmooth(tmp, tmp, CV_BLUR, 2);
         _print("完了\n");
 
         // Canny
-        _print("\tエッジ検出処理...");
+        _print("    - エッジ検出処理...");
         cvCanny(tmp, canny, 50.0, 200.0, 3);
         _print("完了\n");
 
         // 2値化
-        _print("\t二値化処理...");
+        _print("    - 二値化処理...");
         cvThreshold(canny, canny, 128, 255, CV_THRESH_BINARY);
         _print("完了\n");
 
         // 確率的Hough変換
-        _print("\t確率的Hough変換処理...");
+        _print("    - 確率的Hough変換処理...");
         cvCvtColor(canny, colorDst, CV_GRAY2BGR);
         points = cvCreateSeq(CV_SEQ_ELTYPE_POINT, sizeof(CvSeq.class), sizeof(CvPoint.class), pointsStorage);
         lines = cvHoughLines2(canny, houghStorage, CV_HOUGH_PROBABILISTIC, 1, Math.PI/180, 50, 100, 15);
@@ -176,8 +179,6 @@ public class AnalyticProcess extends Thread {
 
         // ROI矩形領域検出
         CvRect roiRect = cvBoundingRect(points, 0);
-        _print(String.format("\t検出ROI領域: (%d, %d), (%d, %d)\n",
-                roiRect.x(), roiRect.y(), roiRect.x()+roiRect.width(), roiRect.y()+roiRect.height()));
 
         cvRectangle(colorDst, cvPoint(roiRect.x(), roiRect.y()), cvPoint(roiRect.x()+roiRect.width(), roiRect.y()+roiRect.height()), CV_RGB(0, 255, 0), 2, CV_AA, 0);
         showImage("Hough", colorDst);
@@ -237,11 +238,13 @@ public class AnalyticProcess extends Thread {
         CvSize half = cvSize(srcSize.width()/2, srcSize.height()/2);
         IplImage tmp = cvCreateImage(half, IPL_DEPTH_8U, 3);
 
+        _print("ノイズ除去処理...");
         cvPyrDown(input, tmp, CV_GAUSSIAN_5x5);
         cvPyrUp(tmp, input, CV_GAUSSIAN_5x5);
 
         cvReleaseImage(tmp);
 
+        _print("完了\n");
         return input;
     }
 
@@ -258,6 +261,7 @@ public class AnalyticProcess extends Thread {
         CvMemStorage squaresStorage  = cvCreateChildMemStorage(storage);
         CvSeq squares = cvCreateSeq(CV_SEQ_ELTYPE_POINT, sizeof(CvSeq.class), sizeof(CvPoint.class), squaresStorage);
 
+        _print("マス目検出処理...\n");
         // 各チャンネル処理
         //for (int i = 1; i <= 3; i++) {
             // COI設定・切り出し処理
@@ -266,14 +270,20 @@ public class AnalyticProcess extends Thread {
             cvCvtColor(input, tmp1, CV_RGB2GRAY);
 
             // エッジ検出
+            _print("    - エッジ検出処理...");
             cvCanny(tmp1, tmp2, 80.0, 300.0, 3);
+            _print("完了\n");
 
             // エッジ強調
+            _print("    - エッジ強調処理...");
             cvDilate(tmp2, tmp2, null, 1);
+            _print("完了\n");
 
             // 輪郭端点抽出
+            _print("    - 輪郭抽出処理...");
             CvSeq contours = new CvSeq(null);
             cvFindContours(tmp2, contoursStorage, contours, sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+            _print("完了\n");
         //}
 
         int count = 0;
@@ -291,7 +301,7 @@ public class AnalyticProcess extends Thread {
             contours = contours.h_next();
         }
         logger.log(Level.FINE, "検出された升目の数: {0}", count);
-        _print(String.format("検出されたマス目の数: %d\n", count));
+        _print(String.format("* 検出されたマス目の数: %d\n", count));
 
         // 結果を出力
         showImage("ROI View", input);
@@ -301,6 +311,8 @@ public class AnalyticProcess extends Thread {
         cvClearSeq(squares);
         cvReleaseMemStorage(contoursStorage);
         cvReleaseMemStorage(squaresStorage);
+        
+        _print("完了\n");
     }
     
     /**
