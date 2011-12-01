@@ -24,6 +24,7 @@ public class AnalyticProcess extends Thread {
     private CvRect roiRect = null;
     private boolean debug = false;
     private AnalyticProcessDelegate delegate = null;
+    private CvController cController = null;
 
     static {
         storage = CvMemStorage.create();
@@ -63,6 +64,8 @@ public class AnalyticProcess extends Thread {
 
         // デリゲートクラスのインスタンスを保持
         delegate = instance;
+
+        if (db) cController = CvController.getInstance();
     }
 
     @Override
@@ -99,14 +102,18 @@ public class AnalyticProcess extends Thread {
      */
     @Override
     public void run() {
+        _print("完了\n");
         // 盤検出
         roiRect = getROI(src);
+
+        _print(String.format("* 検出ROI領域: (%d, %d), (%d, %d)\n",
+                roiRect.x(), roiRect.y(), roiRect.x()+roiRect.width(), roiRect.y()+roiRect.height()));
 
         if (roiRect.width() * roiRect.height() > 0) {
             // ROI領域切り出し
             IplImage roiFrame = getROIView(src, roiRect);
 
-            // ます検出
+            // マス検出
             getRects(roiFrame);
 
             cvReleaseImage(roiFrame);
@@ -131,22 +138,32 @@ public class AnalyticProcess extends Thread {
         CvMemStorage pointsStorage = cvCreateChildMemStorage(storage);
         CvSeq lines, points;
 
+        _print("ROI領域検出処理...\n");
         /*
          * 矩形領域検出
          */
         // グレースケールに変更
+        _print("    - グレースケール変換...");
         cvCvtColor(input, tmp, CV_RGB2GRAY);
+        _print("完了\n");
 
         // 単純平滑化
+        _print("    - 単純平滑化処理...");
         cvSmooth(tmp, tmp, CV_BLUR, 2);
+        _print("完了\n");
 
         // Canny
+        _print("    - エッジ検出処理...");
         cvCanny(tmp, canny, 50.0, 200.0, 3);
+        _print("完了\n");
 
         // 2値化
+        _print("    - 二値化処理...");
         cvThreshold(canny, canny, 128, 255, CV_THRESH_BINARY);
+        _print("完了\n");
 
         // 確率的Hough変換
+        _print("    - 確率的Hough変換処理...");
         cvCvtColor(canny, colorDst, CV_GRAY2BGR);
         points = cvCreateSeq(CV_SEQ_ELTYPE_POINT, sizeof(CvSeq.class), sizeof(CvPoint.class), pointsStorage);
         lines = cvHoughLines2(canny, houghStorage, CV_HOUGH_PROBABILISTIC, 1, Math.PI/180, 50, 100, 15);
@@ -158,6 +175,7 @@ public class AnalyticProcess extends Thread {
             cvSeqPush(points, pt2);
             cvLine(colorDst, pt1, pt2, CV_RGB(255, 0, 0), 1, 8, 0);
         }
+        _print("完了\n");
 
         // ROI矩形領域検出
         CvRect roiRect = cvBoundingRect(points, 0);
@@ -174,6 +192,7 @@ public class AnalyticProcess extends Thread {
         cvReleaseMemStorage(houghStorage);
         cvReleaseMemStorage(pointsStorage);
 
+        _print("完了\n");
         return roiRect;
     }
 
@@ -219,11 +238,13 @@ public class AnalyticProcess extends Thread {
         CvSize half = cvSize(srcSize.width()/2, srcSize.height()/2);
         IplImage tmp = cvCreateImage(half, IPL_DEPTH_8U, 3);
 
+        _print("ノイズ除去処理...");
         cvPyrDown(input, tmp, CV_GAUSSIAN_5x5);
         cvPyrUp(tmp, input, CV_GAUSSIAN_5x5);
 
         cvReleaseImage(tmp);
 
+        _print("完了\n");
         return input;
     }
 
@@ -240,10 +261,11 @@ public class AnalyticProcess extends Thread {
         CvMemStorage contoursStorage = cvCreateChildMemStorage(storage);
         CvMemStorage squaresStorage  = cvCreateChildMemStorage(storage);
         CvSeq squares = cvCreateSeq(CV_SEQ_ELTYPE_PTR, sizeof(CvSeq.class), sizeof(Pointer.class), squaresStorage);
-        
+
         // オリジナルを保持
         cvCopy(input, orig);
 
+        _print("マス目検出処理...\n");
         int count = 0;
         // 各チャンネル処理
         for (int i = 1; i <= 3; i++) {
@@ -252,15 +274,21 @@ public class AnalyticProcess extends Thread {
             cvCopy(orig, tmp1);
 
             // エッジ検出
+            _print("    - エッジ検出処理...");
             cvCanny(tmp1, tmp2, 80.0, 300.0, 3);
+            _print("完了\n");
 
             // エッジ強調
+            _print("    - エッジ強調処理...");
             cvDilate(tmp2, tmp2, null, 1);
+            _print("完了\n");
 
             // 輪郭検出
+            _print("    - 輪郭抽出処理...");
             CvSeq contours = new CvSeq(null);
             cvFindContours(tmp2, contoursStorage, contours, sizeof(CvContour.class), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
-            
+            _print("完了\n");
+
             // 検出された輪郭点群を一つ一つ取り出す
             for (;contours != null && !contours.isNull(); contours = contours.h_next()) {
                 if (contours.elem_size() > 0) {
@@ -269,30 +297,31 @@ public class AnalyticProcess extends Thread {
 
                     // 点数が4点以外の矩形は除外
                     if (poly.total() != 4) continue;
-                    
+
                     // 伸長度計算
                     double area      = Math.abs(cvContourArea(poly, CV_WHOLE_SEQ, 0));
                     double perimeter = cvArcLength(poly, CV_WHOLE_SEQ, -1);
                     double extension = Math.pow(perimeter, 2) / area;
-                    
+
                     // 閾値によるマス目判定
                     if (area > 1050*4 && area < 2100*4){
                         // 輪郭端点表示用：輪郭
                         cvDrawContours(input, poly, CvScalar.RED, CvScalar.GREEN, -1, 2, CV_AA, cvPoint(0, 0));
-                        
+
                         // 矩形候補を保存
                         cvSeqPush(squares, cvCloneSeq(poly, squaresStorage));
-                        
+
                         count++;
                     }
                 }
             }
-            
+
             cvClearMemStorage(contoursStorage);
         }
 
         logger.log(Level.FINE, "検出されたマス目の数: {0}", count);
-        
+        _print(String.format("* 検出されたマス目の数: %d\n", count));
+
         for (int i = 0; i < squares.total(); i++) {
             Pointer square = cvGetSeqElem(squares, i);
             CvPoint pt1 = new CvPoint(square).position(0);
@@ -311,5 +340,17 @@ public class AnalyticProcess extends Thread {
         cvClearSeq(squares);
         cvReleaseMemStorage(contoursStorage);
         cvReleaseMemStorage(squaresStorage);
+
+        _print("完了\n");
+    }
+
+    /**
+     * デバッグ用出力関数
+     * @param str 出力文字列
+     * @since 2011/12/01
+     */
+    private void _print(String str) {
+        if (cController != null) cController.addText(str);
+        else System.out.print(str);
     }
 }
