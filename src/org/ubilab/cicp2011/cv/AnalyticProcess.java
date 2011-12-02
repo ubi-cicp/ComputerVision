@@ -345,18 +345,24 @@ public class AnalyticProcess extends Thread {
 
         _print(String.format("* 検出されたマス目の数: %d\n", count));
 
+        // 抽出された矩形ごとの処理
         next: for (;squares != null && !squares.isNull(); squares = squares.h_next()) {
             if (squares.elem_size() > 0) {
+                CvPoint rect = new CvPoint(4);
                 for (int i = 0; i < squares.total(); i++) {
-                    if (i != 0) _print(", ");
                     CvPoint p = new CvPoint(cvGetSeqElem(squares, i));
                     if (p.x() < 0) {
                         _print("-------------------\n");
                         continue next;
                     }
-                    _print(String.format("(%d, %d)", p.x(), p.y()));
+                    rect.position(i).set(p);
                 }
-                _print("\n");
+                
+                _print(String.format("(%d, %d), (%d, %d), (%d, %d), (%d, %d)\n", 
+                        rect.position(0).x(), rect.position(0).y(),
+                        rect.position(1).x(), rect.position(1).y(),
+                        rect.position(2).x(), rect.position(2).y(),
+                        rect.position(3).x(), rect.position(3).y()));
             }
         }
 
