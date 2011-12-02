@@ -119,6 +119,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
                 } finally {
                     curThread = null;
                 }
+                _print("位置推定処理スレッド終了\n");
 
                 _print("メモリ解放処理...");
                 // GCを強制呼び出し
