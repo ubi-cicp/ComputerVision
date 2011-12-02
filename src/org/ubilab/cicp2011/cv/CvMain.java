@@ -203,8 +203,8 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
     private IplImage _dummyFrame() {
         if (_dummyPic == null) {
             _dummyPic = cvLoadImage("dummy.jpg", CV_LOAD_IMAGE_COLOR);
-            showImage("Source", _dummyPic);
         }
+        showImage("Source", _dummyPic);
         return _dummyPic;
     }
     
