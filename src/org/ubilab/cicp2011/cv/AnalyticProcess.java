@@ -333,20 +333,31 @@ public class AnalyticProcess extends Thread {
 
             cvClearMemStorage(contoursStorage);
             
+            // チャンネル区切りを挿入
+            CvSeq sep = cvCreateSeq(CV_SEQ_ELTYPE_POINT, sizeof(CvSeq.class), sizeof(CvPoint.class), squaresStorage);
+            cvSeqPush(sep, new CvPoint(-1, -1));
+            prevSquare.h_next(sep);
+            sep.h_prev(prevSquare);
+            prevSquare = sep;
+            
             _print(String.format("    - チャンネル %d 処理完了\n", i));
         }
 
         logger.log(Level.FINE, "検出されたマス目の数: {0}", count);
         _print(String.format("* 検出されたマス目の数: %d\n", count));
 
-        for (;squares != null && !squares.isNull(); squares = squares.h_next()) {
+        next: for (;squares != null && !squares.isNull(); squares = squares.h_next()) {
             if (squares.elem_size() > 0) {
                 for (int i = 0; i < squares.total(); i++) {
-                    if (i != 0) System.out.print(", ");
+                    if (i != 0) _print(", ");
                     CvPoint p = new CvPoint(cvGetSeqElem(squares, i));
-                    System.out.print(String.format("(%d, %d)", p.x(), p.y()));
+                    if (p.x() < 0) {
+                        _print("-------------------\n");
+                        continue next;
+                    }
+                    _print(String.format("(%d, %d)", p.x(), p.y()));
                 }
-                System.out.print("\n");
+                _print("\n");
             }
         }
 
