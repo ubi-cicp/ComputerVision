@@ -260,7 +260,8 @@ public class AnalyticProcess extends Thread {
         IplImage tmp2 = cvCreateImage(srcSize, IPL_DEPTH_8U, 1);
         CvMemStorage contoursStorage = cvCreateChildMemStorage(storage);
         CvMemStorage squaresStorage  = cvCreateChildMemStorage(storage);
-        CvSeq squares = cvCreateSeq(CV_SEQ_ELTYPE_PTR, sizeof(CvSeq.class), sizeof(Pointer.class), squaresStorage);
+        CvSeq squares = null;
+        CvSeq prevSquare = null;
 
         // オリジナルを保持
         cvCopy(input, orig);
@@ -311,7 +312,18 @@ public class AnalyticProcess extends Thread {
                         cvDrawContours(input, poly, CvScalar.RED, CvScalar.GREEN, -1, 2, CV_AA, cvPoint(0, 0));
 
                         // 矩形候補を保存
-                        cvSeqPush(squares, cvCloneSeq(poly, squaresStorage));
+                        CvSeq square = cvCreateSeq(CV_SEQ_ELTYPE_POINT, sizeof(CvSeq.class), sizeof(CvPoint.class), squaresStorage);
+                        for (int j = 0; j < poly.total(); j++) {
+                            cvSeqPush(square, new CvPoint(cvGetSeqElem(poly, j)));
+                        }
+                        if (squares == null) {
+                            squares = square;
+                            prevSquare = square;
+                        } else {
+                            prevSquare.h_next(square);
+                            square.h_prev(prevSquare);
+                            prevSquare = square;
+                        }
 
                         count++;
                     }
@@ -327,13 +339,15 @@ public class AnalyticProcess extends Thread {
         logger.log(Level.FINE, "検出されたマス目の数: {0}", count);
         _print(String.format("* 検出されたマス目の数: %d\n", count));
 
-        for (int i = 0; i < squares.total(); i++) {
-            Pointer square = cvGetSeqElem(squares, i);
-            CvPoint pt1 = new CvPoint(square).position(0);
-            CvPoint pt2 = new CvPoint(square).position(1);
-            CvPoint pt3 = new CvPoint(square).position(2);
-            CvPoint pt4 = new CvPoint(square).position(3);
-            System.out.println(String.format("(%d, %d), (%d, %d), (%d, %d), (%d, %d)", pt1.x(), pt1.y(), pt2.x(), pt2.y(), pt3.x(), pt3.y(), pt4.x(), pt4.y()));
+        for (;squares != null && !squares.isNull(); squares = squares.h_next()) {
+            if (squares.elem_size() > 0) {
+                for (int i = 0; i < squares.total(); i++) {
+                    if (i != 0) System.out.print(", ");
+                    CvPoint p = new CvPoint(cvGetSeqElem(squares, i));
+                    System.out.print(String.format("(%d, %d)", p.x(), p.y()));
+                }
+                System.out.print("\n");
+            }
         }
 
         // 結果を出力
@@ -342,7 +356,7 @@ public class AnalyticProcess extends Thread {
         cvReleaseImage(orig);
         cvReleaseImage(tmp1);
         cvReleaseImage(tmp2);
-        cvClearSeq(squares);
+        if (prevSquare != null) cvClearSeq(prevSquare);
         cvReleaseMemStorage(contoursStorage);
         cvReleaseMemStorage(squaresStorage);
 
