@@ -343,7 +343,6 @@ public class AnalyticProcess extends Thread {
             _print(String.format("    - チャンネル %d 処理完了\n", i));
         }
 
-        logger.log(Level.FINE, "検出されたマス目の数: {0}", count);
         _print(String.format("* 検出されたマス目の数: %d\n", count));
 
         next: for (;squares != null && !squares.isNull(); squares = squares.h_next()) {
@@ -381,6 +380,6 @@ public class AnalyticProcess extends Thread {
      */
     private void _print(String str) {
         if (cController != null) cController.addText(str);
-        else System.out.print(str);
+        logger.fine(str);
     }
 }
