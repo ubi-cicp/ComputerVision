@@ -1,9 +1,9 @@
 package org.ubilab.cicp2011.cv;
 
 import java.util.HashMap;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import javax.swing.JFrame;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import com.googlecode.javacv.*;
 import static com.googlecode.javacv.cpp.opencv_core.*;
 import static com.googlecode.javacv.cpp.opencv_highgui.*;
@@ -19,15 +19,17 @@ import static com.googlecode.javacv.cpp.opencv_highgui.*;
  * @author atsushi-o
  * @since 2011/11/17
  */
-public class CvMain extends Thread implements AnalyticProcessDelegate {
+public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
     private CvCapture capture;
-    private boolean runnable = true;
     private boolean debug;
     private static final HashMap<String, CanvasFrame> canvas;
+    private static final Logger logger;
     private AnalyticProcess curThread = null;
+    private CvController cController = null;
     
     static {
         canvas = new HashMap<String, CanvasFrame>();
+        logger = Logger.getLogger(CvMain.class.getName());
     }
 
     /**
@@ -66,6 +68,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
         }
     }
     
+    
     /**
      * Builderクラスからパラメータを受け取りインスタンスを生成する
      * @param param Builderクラスのインスタンス
@@ -80,62 +83,59 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
         // デバッグ用設定
         debug = param.debug;
         if (debug) {
-            CanvasFrame tmp = new CanvasFrame("Source");
-            tmp.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            tmp.addWindowListener(new WindowAdapter() {
-                // ウィンドウが閉じるときに呼ばれる
-                @Override
-                public void windowClosing(WindowEvent e) {
-                    halt();
-                }
-            });
-            canvas.put("Source", tmp);
-            
+            createCanvas("Source");
             createCanvas("Hough");
             createCanvas("ROI View");
+            
+            cController = CvController.getInstance();
+            cController.setDelegate(this);
+            cController.setVisible(true);
         }
         _setVisible(debug);
-    }
-    
-    @Override
-    public void start() {
-        runnable = true;
-        super.start();
-    }
-    
-    /**
-     * 実行中のスレッドを停止する
-     * @since 2011/11/22
-     */
-    public synchronized void halt() {
-        runnable = false;
-    }
-    
-    @Override
-    public void run() {
         
-        while (runnable) {
-            try {
-                curThread = new AnalyticProcess(_captureFrame(), debug, this);
-                curThread.start();
-                // スレッドの実行が終了するまで待機
-                curThread.join();
-            } catch (IllegalThreadStateException e) {
-                continue;
-            } catch (InterruptedException e) {
-                curThread = null;
-                break;
+        logger.log(Level.INFO, "CvMain start: camera{0} ({1}x{2}) {3}", new Object[]{param.camera, param.width, param.height, debug?"DEBUG":""});
+    }
+         
+    @Override
+    public void capture() {
+        if (cController != null) cController.clearText();
+        _print("位置推定処理スレッドを開始...");
+        Thread th = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    curThread = new AnalyticProcess(_captureFrame(), debug, CvMain.this);
+                    curThread.start();
+                    // スレッドの実行が終了するまで待機
+                    curThread.join();
+                } catch (IllegalThreadStateException e) {
+                } catch (InterruptedException e) {
+                } finally {
+                    curThread = null;
+                }
+
+                _print("メモリ解放処理...");
+                // GCを強制呼び出し
+                Runtime.getRuntime().gc();
+                _print("完了\n");
+                _print("=== 位置推定処理終了 ===\n");
             }
-            
-            // GCを強制呼び出し
-            curThread = null;
-            Runtime.getRuntime().gc();
-        }
+        });
+        th.start();
+    }
+
+    @Override
+    public void quit() {
+        curThread = null;
         AnalyticProcess.releaseMemStorage();
+        disposeAllCanvas();
+        cController.dispose();
+        System.exit(0);
     }
 
     @Override
     public final void createCanvas(String key) {
+        logger.log(Level.INFO, "Create New CanvasFrame: {0}", key);
         synchronized(this) {
             if (!canvas.containsKey(key)) {
                 CanvasFrame tmp = new CanvasFrame(key);
@@ -143,6 +143,19 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
                 canvas.put(key, tmp);
             }
         }
+    }
+    
+    /**
+     * すべてのCanvasFrameを閉じてリソースを解放する
+     * @since 2011/11/30
+     */
+    private synchronized void disposeAllCanvas() {
+        logger.info("Close all CanvasFrame");
+        for (CanvasFrame cf : canvas.values()) {
+            cf.setVisible(false);
+            cf.dispose();
+        }
+        canvas.clear();
     }
     
     @Override
@@ -155,7 +168,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
             }
         }
     }
-    
+
     /**
      * カメラから画像をキャプチャし，結果を返す
      * <pre>
@@ -183,8 +196,17 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
         }
     }
     
+    /**
+     * デバッグ用出力関数
+     * @param str 出力文字列
+     * @since 2011/12/01
+     */
+    private void _print(String str) {
+        if (cController != null) cController.addText(str);
+        else System.out.print(str);
+    }
+    
     public static void main(String[] args) {
-        CvMain cv = new CvMain.Builder(0).debug(true).build();
-        cv.start();
+        new CvMain.Builder(0).debug(true).build();
     }
 }
