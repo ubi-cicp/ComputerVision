@@ -66,6 +66,7 @@ public class CvController extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
 
         setTitle("CvController");
+        setAlwaysOnTop(true);
         setResizable(false);
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
