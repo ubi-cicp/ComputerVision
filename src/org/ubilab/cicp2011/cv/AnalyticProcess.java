@@ -386,6 +386,6 @@ public class AnalyticProcess extends Thread {
      */
     private void _print(String str) {
         if (cController != null) cController.addText(str);
-        logger.fine(str);
+        logger.fine(str.replaceAll("\n", ""));
     }
 }
