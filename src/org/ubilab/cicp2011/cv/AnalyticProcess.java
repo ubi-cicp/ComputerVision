@@ -121,6 +121,8 @@ public class AnalyticProcess extends Thread {
         }
 
         cvClearMemStorage(storage);
+        
+        _print("位置推定処理スレッドを終了...");
     }
 
     /**
