@@ -374,7 +374,7 @@ public class AnalyticProcess extends Thread {
             java.util.ArrayList<CvPoint> list = new java.util.ArrayList<CvPoint>();
             
             for (int i = 0; i < 4; i ++) {
-                list.add(e.position(i));
+                list.add(new CvPoint(e.position(i)));
             }
             java.util.Collections.sort(list, new ManhattanComparator());
             
