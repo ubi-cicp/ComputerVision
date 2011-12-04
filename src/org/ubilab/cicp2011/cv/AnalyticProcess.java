@@ -378,6 +378,9 @@ public class AnalyticProcess extends Thread {
             }
             java.util.Collections.sort(list, new ManhattanComparator());
             
+            // 左下と右下の順番を入れ替え
+            list.set(2, list.set(3, list.get(2)));
+            
             int i = 0;
             for (CvPoint p : list) {
                 ret.position(i++).set(p);
