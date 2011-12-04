@@ -1,10 +1,8 @@
 package org.ubilab.cicp2011.cv;
 
-import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import com.googlecode.javacpp.Pointer;
-import com.googlecode.javacv.*;
 import static com.googlecode.javacv.cpp.opencv_core.*;
 import static com.googlecode.javacv.cpp.opencv_imgproc.*;
 import static com.googlecode.javacpp.Loader.*;
@@ -262,7 +260,7 @@ public class AnalyticProcess extends Thread {
         IplImage tmp1 = cvCreateImage(srcSize, IPL_DEPTH_8U, 1);
         IplImage tmp2 = cvCreateImage(srcSize, IPL_DEPTH_8U, 1);
         CvMemStorage contoursStorage = cvCreateChildMemStorage(storage);
-        ArrayList<CvPoint> squares = new ArrayList<CvPoint>();
+        SquareList squares = new SquareList();
 
         // オリジナルを保持
         cvCopy(input, orig);
@@ -365,5 +363,75 @@ public class AnalyticProcess extends Thread {
     private void _print(String str) {
         if (cController != null) cController.addText(str);
         logger.fine(str.replaceAll("\n", ""));
+    }
+    
+    /**
+     * 抽出矩形の保持用リスト
+     * 
+     * @author atsushi-o
+     * @since 2011/12/03
+     */
+    private class SquareList extends java.util.ArrayList<CvPoint> {
+        /**
+         * 抽出矩形を表す4点の配列を左上，右上，右下，左下の順番に並べ替えてリストの最後に追加する
+         * @param e 要素を4つ持つCvPoint
+         * @return true ({@link java.util.Collection#add(java.lang.Object)} で指定されているとおり)
+         */
+        @Override
+        public boolean add(CvPoint e) {
+            if (e == null) return super.add(e);
+            
+            CvPoint ret = new CvPoint(4);
+            java.util.ArrayList<CvPoint> list = new java.util.ArrayList<CvPoint>();
+            
+            for (int i = 0; i < 4; i ++) {
+                list.add(e.position(i));
+            }
+            java.util.Collections.sort(list, new ManhattanComparator());
+            
+            int i = 0;
+            for (CvPoint p : list) {
+                ret.position(i++).set(p);
+            }
+            return super.add(ret);
+        }
+        
+        /**
+         * 抽出矩形のリストを左上から右下方向へソートする
+         * @since 2011/12/03
+         */
+        public void sort() {
+            java.util.Collections.sort(this, new SquareComparator());
+        }
+    }
+     
+    /**
+     * CvPointのマンハッタン距離による比較クラス
+     * 
+     * @author atsushi-o
+     * @since 2011/12/04
+     */
+    public class ManhattanComparator implements java.util.Comparator<CvPoint> {
+        @Override
+        public int compare(CvPoint o1, CvPoint o2) {
+            int o1m = o1.x() + o1.y();
+            int o2m = o2.x() + o2.y();
+            return o1m - o2m;
+        }
+    }
+    
+    /**
+     * 抽出矩形のソート用比較クラス
+     * 
+     * @author atsushi-o
+     * @since 2011/12/03
+     */
+    private class SquareComparator implements java.util.Comparator<CvPoint> {
+        @Override
+        public int compare(CvPoint o1, CvPoint o2) {
+            ManhattanComparator mc = new ManhattanComparator();
+            
+            return mc.compare(o1.position(0), o2.position(0));
+        }
     }
 }
