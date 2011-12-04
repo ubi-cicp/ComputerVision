@@ -331,18 +331,7 @@ public class AnalyticProcess extends Thread {
         _print(String.format("* 検出されたマス目の数: %d\n", squares.size()-3));
 
         // 抽出された矩形ごとの処理
-        for (CvPoint square : squares) {
-            if (square == null) {
-                _print("-------------------\n");
-                continue;
-            }
-            
-            _print(String.format("(%d, %d), (%d, %d), (%d, %d), (%d, %d)\n", 
-                    square.position(0).x(), square.position(0).y(),
-                    square.position(1).x(), square.position(1).y(),
-                    square.position(2).x(), square.position(2).y(),
-                    square.position(3).x(), square.position(3).y()));
-        }
+        _print(squares.toString());
 
         // 結果を出力
         showImage("ROI", input);
@@ -402,6 +391,34 @@ public class AnalyticProcess extends Thread {
          */
         public void sort() {
             java.util.Collections.sort(this, new SquareComparator());
+        }
+        
+        /**
+         * 抽出矩形のリストを出力する
+         * 
+         * nullはセパレータとして機能する
+         * 
+         * @return 抽出矩形のリストの文字列表現
+         * @since 2011/12/04
+         */
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            
+            for (CvPoint p : this) {
+                if (p == null) {
+                    sb.append("-------------------\n");
+                    continue;
+                }
+                
+                sb.append(String.format("(%d, %d), (%d, %d), (%d, %d), (%d, %d)\n", 
+                    p.position(0).x(), p.position(0).y(),
+                    p.position(1).x(), p.position(1).y(),
+                    p.position(2).x(), p.position(2).y(),
+                    p.position(3).x(), p.position(3).y()));
+            }
+            
+            return sb.toString();
         }
     }
      
