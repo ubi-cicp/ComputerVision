@@ -1,6 +1,8 @@
 package org.ubilab.cicp2011.cv;
 
 import java.util.HashMap;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import javax.swing.JFrame;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -24,10 +26,12 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
     private boolean runnable = true;
     private boolean debug;
     private static final HashMap<String, CanvasFrame> canvas;
+    private static final Logger logger;
     private AnalyticProcess curThread = null;
 
     static {
         canvas = new HashMap<String, CanvasFrame>();
+        logger = Logger.getLogger(CvMain.class.getName());
     }
 
     /**
@@ -81,7 +85,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
         debug = param.debug;
         if (debug) {
             CanvasFrame tmp = new CanvasFrame("Source");
-            tmp.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            tmp.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
             tmp.addWindowListener(new WindowAdapter() {
                 // ウィンドウが閉じるときに呼ばれる
                 @Override
@@ -95,10 +99,13 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
             createCanvas("ROI View");
         }
         _setVisible(debug);
+        
+        logger.log(Level.INFO, "CvMain start: camera{0} ({1}x{2}) {3}", new Object[]{param.camera, param.width, param.height, debug?"DEBUG":""});
     }
 
     @Override
     public void start() {
+        logger.info("Thread start");
         runnable = true;
         super.start();
     }
@@ -108,6 +115,7 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
      * @since 2011/11/22
      */
     public synchronized void halt() {
+        logger.info("Thread stop");
         runnable = false;
     }
 
@@ -122,10 +130,12 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
             Runtime.getRuntime().gc();
         }
         AnalyticProcess.releaseMemStorage();
+        disposeAllCanvas();
     }
 
     @Override
     public final void createCanvas(String key) {
+        logger.log(Level.INFO, "Create New CanvasFrame: {0}", key);
         synchronized(this) {
             if (!canvas.containsKey(key)) {
                 CanvasFrame tmp = new CanvasFrame(key);
@@ -134,7 +144,20 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
             }
         }
     }
-
+    
+    /**
+     * すべてのCanvasFrameを閉じてリソースを解放する
+     * @since 2011/11/30
+     */
+    private synchronized void disposeAllCanvas() {
+        logger.info("Close all CanvasFrame");
+        for (CanvasFrame cf : canvas.values()) {
+            cf.setVisible(false);
+            cf.dispose();
+        }
+        canvas.clear();
+    }
+    
     @Override
     public final void showImage(String key, IplImage image) {
         synchronized(this) {
@@ -176,5 +199,11 @@ public class CvMain extends Thread implements AnalyticProcessDelegate {
     public static void main(String[] args) {
         CvMain cv = new CvMain.Builder(0).debug(true).build();
         cv.start();
+        try {
+            cv.join();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(CvMain.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        System.exit(0);
     }
 }
