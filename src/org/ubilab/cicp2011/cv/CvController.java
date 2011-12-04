@@ -60,6 +60,7 @@ public class CvController extends javax.swing.JFrame {
         jTextArea1 = new javax.swing.JTextArea();
 
         setTitle("CvController");
+        setAlwaysOnTop(true);
         setResizable(false);
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {

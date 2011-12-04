@@ -120,6 +120,8 @@ public class AnalyticProcess extends Thread {
         }
 
         cvClearMemStorage(storage);
+        
+        _print("位置推定処理スレッドを終了...");
     }
 
     /**
@@ -300,7 +302,6 @@ public class AnalyticProcess extends Thread {
             }
             contours = contours.h_next();
         }
-        logger.log(Level.FINE, "検出された升目の数: {0}", count);
         _print(String.format("* 検出されたマス目の数: %d\n", count));
 
         // 結果を出力
@@ -322,6 +323,6 @@ public class AnalyticProcess extends Thread {
      */
     private void _print(String str) {
         if (cController != null) cController.addText(str);
-        else System.out.print(str);
+        logger.fine(str.replaceAll("\n", ""));
     }
 }
