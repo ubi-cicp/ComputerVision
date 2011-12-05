@@ -329,8 +329,9 @@ public class AnalyticProcess extends Thread {
         }
 
         _print(String.format("* 検出されたマス目の数: %d\n", squares.size()-3));
-
+        
         // 抽出された矩形ごとの処理
+        squares.sort();
         _print(squares.toString());
 
         // 結果を出力
@@ -382,7 +383,8 @@ public class AnalyticProcess extends Thread {
          */
         @Override
         public boolean add(CvPoint e) {
-            if (e == null) return super.add(e);
+            if (e == null) return false;
+            if (contains(e)) return false;
             
             CvPoint ret = new CvPoint(4);
             java.util.ArrayList<CvPoint> list = new java.util.ArrayList<CvPoint>();
@@ -419,8 +421,6 @@ public class AnalyticProcess extends Thread {
         /**
          * 抽出矩形のリストを出力する
          * 
-         * nullはセパレータとして機能する
-         * 
          * @return 抽出矩形のリストの文字列表現
          * @since 2011/12/04
          */
@@ -429,11 +429,6 @@ public class AnalyticProcess extends Thread {
             StringBuilder sb = new StringBuilder();
             
             for (CvPoint p : this) {
-                if (p == null) {
-                    sb.append("-------------------\n");
-                    continue;
-                }
-                
                 sb.append(String.format("(%d, %d), (%d, %d), (%d, %d), (%d, %d)\n", 
                     p.position(0).x(), p.position(0).y(),
                     p.position(1).x(), p.position(1).y(),
@@ -445,6 +440,24 @@ public class AnalyticProcess extends Thread {
             sb.append(String.format("平均幅: %f\n平均高: %f\n", widthAve, heightAve));
             
             return sb.toString();
+        }
+        
+        /**
+         * 抽出矩形のソート用比較クラス
+         * 
+         * @author atsushi-o
+         * @since 2011/12/03
+         */
+        private class SquareComparator implements java.util.Comparator<CvPoint> {
+            @Override
+            public int compare(CvPoint o1, CvPoint o2) {
+                int diffY = o1.position(0).y() - o2.position(0).y();
+                if (diffY > -(heightAve/2) && diffY < (heightAve/2)) {
+                    return o1.position(0).x() - o2.position(0).x();
+                }
+
+                return diffY;
+            }
         }
     }
      
@@ -460,24 +473,6 @@ public class AnalyticProcess extends Thread {
             int o1m = o1.x() + o1.y();
             int o2m = o2.x() + o2.y();
             return o1m - o2m;
-        }
-    }
-    
-    /**
-     * 抽出矩形のソート用比較クラス
-     * 
-     * @author atsushi-o
-     * @since 2011/12/03
-     */
-    private class SquareComparator implements java.util.Comparator<CvPoint> {
-        @Override
-        public int compare(CvPoint o1, CvPoint o2) {
-            int diffY = o1.position(0).y() - o2.position(0).y();
-            if (diffY > -30 && diffY < 30) {
-                return o1.position(0).x() - o2.position(0).x();
-            }
-            
-            return diffY;
         }
     }
 }
