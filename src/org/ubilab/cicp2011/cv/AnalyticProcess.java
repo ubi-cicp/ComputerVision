@@ -306,9 +306,6 @@ public class AnalyticProcess extends Thread {
 
                     // 閾値によるマス目判定
                     if (area > 1050*4 && area < 2100*4){
-                        // 輪郭端点表示用：輪郭
-                        cvDrawContours(input, poly, CvScalar.RED, CvScalar.GREEN, -1, 2, CV_AA, cvPoint(0, 0));
-
                         // 矩形候補を保存
                         CvPoint square = new CvPoint(4);
                         for (int j = 0; j < poly.total(); j++) {
@@ -329,6 +326,9 @@ public class AnalyticProcess extends Thread {
         squares.sort();
         _print(String.format("* 検出されたマス目の数: %d\n", squares.size()));
         _print(squares.toString());
+        for (int i = 0; i < squares.size(); i++) {
+            squares.drawSquare(input, i);
+        }
 
         // 結果を出力
         showImage("ROI", input);
@@ -440,6 +440,19 @@ public class AnalyticProcess extends Thread {
                 sum += Math.abs(pt1.position(i).x() - pt2.position(i).x()) + Math.abs(pt1.position(i).y() - pt2.position(i).y());
             }
             return sum;
+        }
+        
+        /**
+         * 指定されたindexの矩形を描画する
+         * @param img 書き出し先のIplImage
+         * @param index 書きだす矩形のindex
+         * @since 2011/12/05
+         */
+        public void drawSquare(IplImage img, int index) {
+            CvPoint pt = get(index);
+            for (int i = 0; i < 4; i++) {
+                cvLine(img, new CvPoint(pt.position(i)), new CvPoint(pt.position((i+1)%4)), CvScalar.GREEN, 2, CV_AA, 0);
+            }
         }
         
         /**
