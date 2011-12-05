@@ -458,9 +458,12 @@ public class AnalyticProcess extends Thread {
     private class SquareComparator implements java.util.Comparator<CvPoint> {
         @Override
         public int compare(CvPoint o1, CvPoint o2) {
-            ManhattanComparator mc = new ManhattanComparator();
+            int diffY = o1.position(0).y() - o2.position(0).y();
+            if (diffY > -30 && diffY < 30) {
+                return o1.position(0).x() - o2.position(0).x();
+            }
             
-            return mc.compare(o1.position(0), o2.position(0));
+            return diffY;
         }
     }
 }
