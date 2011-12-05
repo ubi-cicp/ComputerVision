@@ -441,6 +441,9 @@ public class AnalyticProcess extends Thread {
                     p.position(3).x(), p.position(3).y()));
             }
             
+            sb.append("-----------------------------------\n");
+            sb.append(String.format("平均幅: %f\n平均高: %f\n", widthAve, heightAve));
+            
             return sb.toString();
         }
     }
