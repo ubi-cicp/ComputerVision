@@ -361,10 +361,24 @@ public class AnalyticProcess extends Thread {
      * @since 2011/12/03
      */
     private class SquareList extends java.util.ArrayList<CvPoint> {
+        private double widthAve;
+        private double heightAve;
+
+        /**
+         * コンストラクタ
+         * @since 2011/12/05
+         */
+        public SquareList() {
+            super();
+            widthAve = 0;
+            heightAve = 0;
+        }
+
         /**
          * 抽出矩形を表す4点の配列を左上，右上，右下，左下の順番に並べ替えてリストの最後に追加する
          * @param e 要素を4つ持つCvPoint
          * @return true ({@link java.util.Collection#add(java.lang.Object)} で指定されているとおり)
+         * @since 2011/12/03
          */
         @Override
         public boolean add(CvPoint e) {
@@ -380,6 +394,12 @@ public class AnalyticProcess extends Thread {
             
             // 左下と右下の順番を入れ替え
             list.set(2, list.set(3, list.get(2)));
+
+            // 幅と高さの平均を計算
+            int width = Math.abs(list.get(0).x() - list.get(1).x());
+            int height = Math.abs(list.get(1).y() - list.get(2).y());
+            widthAve = (widthAve * size() + width) / (size() + 1);
+            heightAve = (heightAve * size() + height) / (size() + 1);
             
             int i = 0;
             for (CvPoint p : list) {
