@@ -322,16 +322,12 @@ public class AnalyticProcess extends Thread {
 
             cvClearMemStorage(contoursStorage);
             
-            // チャンネル区切りを挿入
-            squares.add(null);
-            
             _print(String.format("    - チャンネル %d 処理完了\n", i));
         }
-
-        _print(String.format("* 検出されたマス目の数: %d\n", squares.size()-3));
         
         // 抽出された矩形ごとの処理
         squares.sort();
+        _print(String.format("* 検出されたマス目の数: %d\n", squares.size()));
         _print(squares.toString());
 
         // 結果を出力
@@ -416,6 +412,34 @@ public class AnalyticProcess extends Thread {
          */
         public void sort() {
             java.util.Collections.sort(this, new SquareComparator());
+            
+            // 重複マスを除去
+            java.util.Iterator<CvPoint> it = this.iterator();
+            CvPoint prevPt = it.next();
+            while (it.hasNext()) {
+                CvPoint pt = it.next();
+                if (cvPointDiff(pt, prevPt) < 30) {
+                    it.remove();
+                } else {
+                    prevPt = pt;
+                }
+            }
+        }
+        
+        /**
+         * 2つの検出矩形の4点の座標の差の絶対値の和を返す
+         * @param pt1 比較する矩形
+         * @param pt2 比較する矩形
+         * @return 4点の座標の差の絶対値の和
+         * @deprecated オブジェクト指向の考え方からしてよろしくない実装
+         * @since 2011/12/05
+         */
+        private int cvPointDiff(CvPoint pt1, CvPoint pt2) {
+            int sum = 0;
+            for (int i = 0; i < 4; i++) {
+                sum += Math.abs(pt1.position(i).x() - pt2.position(i).x()) + Math.abs(pt1.position(i).y() - pt2.position(i).y());
+            }
+            return sum;
         }
         
         /**
