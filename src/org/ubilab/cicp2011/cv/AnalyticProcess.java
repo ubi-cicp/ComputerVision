@@ -360,7 +360,7 @@ public class AnalyticProcess extends Thread {
      * @author atsushi-o
      * @since 2011/12/03
      */
-    private class SquareList extends java.util.TreeSet<CvPoint> {
+    private class SquareList extends java.util.ArrayList<CvPoint> {
         private double widthAve;
         private double heightAve;
 
@@ -369,21 +369,20 @@ public class AnalyticProcess extends Thread {
          * @since 2011/12/05
          */
         public SquareList() {
-            super(new SquareComparator());
+            super();
             widthAve = 0;
             heightAve = 0;
         }
 
         /**
-         * 抽出矩形を表す4点の配列を左上，右上，右下，左下の順番に並べ替えてリストに追加する
+         * 抽出矩形を表す4点の配列を左上，右上，右下，左下の順番に並べ替えてリストの最後に追加する
          * @param e 要素を4つ持つCvPoint
          * @return true ({@link java.util.Collection#add(java.lang.Object)} で指定されているとおり)
-         * @see java.util.TreeSet#add(java.lang.Object) 
          * @since 2011/12/03
          */
         @Override
         public boolean add(CvPoint e) {
-            if (e == null) return false;
+            if (e == null) return super.add(e);
             
             CvPoint ret = new CvPoint(4);
             java.util.ArrayList<CvPoint> list = new java.util.ArrayList<CvPoint>();
@@ -410,7 +409,17 @@ public class AnalyticProcess extends Thread {
         }
         
         /**
+         * 抽出矩形のリストを左上から右下方向へソートする
+         * @since 2011/12/03
+         */
+        public void sort() {
+            java.util.Collections.sort(this, new SquareComparator());
+        }
+        
+        /**
          * 抽出矩形のリストを出力する
+         * 
+         * nullはセパレータとして機能する
          * 
          * @return 抽出矩形のリストの文字列表現
          * @since 2011/12/04
@@ -420,15 +429,17 @@ public class AnalyticProcess extends Thread {
             StringBuilder sb = new StringBuilder();
             
             for (CvPoint p : this) {
+                if (p == null) {
+                    sb.append("-------------------\n");
+                    continue;
+                }
+                
                 sb.append(String.format("(%d, %d), (%d, %d), (%d, %d), (%d, %d)\n", 
                     p.position(0).x(), p.position(0).y(),
                     p.position(1).x(), p.position(1).y(),
                     p.position(2).x(), p.position(2).y(),
                     p.position(3).x(), p.position(3).y()));
             }
-            
-            sb.append("----------------------------------\n");
-            sb.append(String.format("平均幅: %f\n平均高: %f\n", widthAve, heightAve));
             
             return sb.toString();
         }
