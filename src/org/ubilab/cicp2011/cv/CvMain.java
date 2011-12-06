@@ -22,11 +22,13 @@ import static com.googlecode.javacv.cpp.opencv_highgui.*;
 public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
     private CvCapture capture;
     private boolean debug;
+    private boolean useDummy;
     private static final HashMap<String, CanvasFrame> canvas;
     private static final Logger logger;
     private AnalyticProcess curThread = null;
     private CvController cController = null;
-    
+    private IplImage _dummyPic = null;
+
     static {
         canvas = new HashMap<String, CanvasFrame>();
         logger = Logger.getLogger(CvMain.class.getName());
@@ -39,12 +41,13 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
     public static class Builder {
         // Required param
         private final int camera;
-        
+
         // Optional param
         private int width       = 1280;
         private int height      = 960;
         private boolean debug   = false;
-        
+        private boolean useDummy= false;
+
         /**
          * 必須パラメータを指定
          * @param camera OpenCVで使用するカメラのインデックス
@@ -53,11 +56,12 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
         public Builder(int camera) {
             this.camera = camera;
         }
-        
+
         public Builder width(int val)       { width = val; return this; }
         public Builder height(int val)      { height = val; return this; }
         public Builder debug(boolean val)   { debug = val; return this; }
-        
+        public Builder useDummy(boolean val){ useDummy = val; return this; }
+
         /**
          * CvMainのインスタンスを生成する
          * @return CvMainのインスタンス
@@ -67,8 +71,8 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
             return new CvMain(this);
         }
     }
-    
-    
+
+
     /**
      * Builderクラスからパラメータを受け取りインスタンスを生成する
      * @param param Builderクラスのインスタンス
@@ -79,23 +83,25 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
         capture = cvCreateCameraCapture(param.camera);
         cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_WIDTH, param.width);
         cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_HEIGHT, param.height);
-        
+
         // デバッグ用設定
         debug = param.debug;
         if (debug) {
             createCanvas("Source");
             createCanvas("Hough");
             createCanvas("ROI");
-            
+
             cController = CvController.getInstance();
             cController.setDelegate(this);
             cController.setVisible(true);
         }
+
         _setVisible(false);
-        
+        useDummy = param.useDummy;
+
         logger.log(Level.INFO, "CvMain start: camera{0} ({1}x{2}) {3}", new Object[]{param.camera, param.width, param.height, debug?"DEBUG":""});
     }
-         
+
     @Override
     public void capture() {
         if (cController != null) cController.clearText();
@@ -104,7 +110,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
             @Override
             public void run() {
                 try {
-                    curThread = new AnalyticProcess(_captureFrame(), debug, CvMain.this);
+                    curThread = new AnalyticProcess(useDummy?_dummyFrame():_captureFrame(), debug, CvMain.this);
                     curThread.start();
                     // スレッドの実行が終了するまで待機
                     curThread.join();
@@ -113,6 +119,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
                 } finally {
                     curThread = null;
                 }
+                _print("完了\n");
 
                 _print("メモリ解放処理...");
                 // GCを強制呼び出し
@@ -123,7 +130,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
         });
         th.start();
     }
-    
+
     @Override
     public void setVisible(String key, boolean b) {
         synchronized(this) {
@@ -138,6 +145,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
     public void quit() {
         curThread = null;
         AnalyticProcess.releaseMemStorage();
+        if (_dummyPic != null) cvReleaseImage(_dummyPic);
         disposeAllCanvas();
         cController.dispose();
         System.exit(0);
@@ -155,7 +163,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
             }
         }
     }
-    
+
     /**
      * すべてのCanvasFrameを閉じてリソースを解放する
      * @since 2011/11/30
@@ -168,7 +176,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
         }
         canvas.clear();
     }
-    
+
     @Override
     public final void showImage(String key, IplImage image) {
         synchronized(this) {
@@ -195,7 +203,24 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
         showImage("Source", capFrame);
         return capFrame;
     }
-    
+
+    /**
+     * ダミー画像を読み込み，返す
+     * <pre>
+     * カメラがない環境でのデバッグ用．
+     * </pre>
+     * @return ダミー画像
+     * @deprecated デバッグ用
+     * @since 2011/12/03
+     */
+    private IplImage _dummyFrame() {
+        if (_dummyPic == null) {
+            _dummyPic = cvLoadImage("dummy.jpg", CV_LOAD_IMAGE_COLOR);
+        }
+        showImage("Source", _dummyPic);
+        return _dummyPic;
+    }
+
     /**
      * デバッグ用CanvasFrameの表示/非表示を切り替える
      * @param b 表示/非表示
@@ -206,7 +231,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
             f.setVisible(b);
         }
     }
-    
+
     /**
      * デバッグ用出力関数
      * @param str 出力文字列
@@ -216,8 +241,8 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
         if (cController != null) cController.addText(str);
         else System.out.print(str);
     }
-    
+
     public static void main(String[] args) {
-        new CvMain.Builder(0).debug(true).build();
+        new CvMain.Builder(0).debug(true).useDummy(true).build();
     }
 }
