@@ -21,6 +21,7 @@ public class AnalyticProcess extends Thread {
     private static final Logger logger;
     private IplImage src = null;
     private CvRect roiRect = null;
+    private SquareList squares;
     private boolean debug = false;
     private AnalyticProcessDelegate delegate = null;
     private CvController cController = null;
@@ -60,6 +61,7 @@ public class AnalyticProcess extends Thread {
         super();
         src = input;
         debug = db;
+        squares = new SquareList();
 
         // デリゲートクラスのインスタンスを保持
         delegate = instance;
@@ -260,7 +262,6 @@ public class AnalyticProcess extends Thread {
         IplImage tmp1 = cvCreateImage(srcSize, IPL_DEPTH_8U, 1);
         IplImage tmp2 = cvCreateImage(srcSize, IPL_DEPTH_8U, 1);
         CvMemStorage contoursStorage = cvCreateChildMemStorage(storage);
-        SquareList squares = new SquareList();
 
         // オリジナルを保持
         cvCopy(input, orig);
