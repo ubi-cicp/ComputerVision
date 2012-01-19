@@ -27,6 +27,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
     private static final Logger logger;
     private AnalyticProcess curThread = null;
     private CvController cController = null;
+    private IplImage prevFrame = null;
     private IplImage _dummyPic = null;
 
     static {
@@ -90,6 +91,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
             createCanvas("Source");
             createCanvas("Hough");
             createCanvas("ROI");
+            createCanvas("Diff");
 
             cController = CvController.getInstance();
             cController.setDelegate(this);
@@ -164,6 +166,17 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
         }
     }
 
+    @Override
+    public IplImage getPrevFrame() {
+        return prevFrame;
+    }
+
+    @Override
+    public void setPrevFrame(IplImage image) {
+        if (!useDummy) prevFrame = image;
+    }
+
+
     /**
      * すべてのCanvasFrameを閉じてリソースを解放する
      * @since 2011/11/30
@@ -215,7 +228,8 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
      */
     private IplImage _dummyFrame() {
         if (_dummyPic == null) {
-            _dummyPic = cvLoadImage("dummy.jpg", CV_LOAD_IMAGE_COLOR);
+            _dummyPic = cvLoadImage("dummy1.jpg", CV_LOAD_IMAGE_COLOR);
+            prevFrame = cvLoadImage("dummy2.jpg", CV_LOAD_IMAGE_COLOR);
         }
         showImage("Source", _dummyPic);
         return _dummyPic;

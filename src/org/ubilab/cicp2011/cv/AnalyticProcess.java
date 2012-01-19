@@ -21,6 +21,7 @@ public class AnalyticProcess extends Thread {
     private static final Logger logger;
     private IplImage src = null;
     private CvRect roiRect = null;
+    private SquareList squares;
     private boolean debug = false;
     private AnalyticProcessDelegate delegate = null;
     private CvController cController = null;
@@ -60,17 +61,12 @@ public class AnalyticProcess extends Thread {
         super();
         src = input;
         debug = db;
+        squares = new SquareList();
 
         // デリゲートクラスのインスタンスを保持
         delegate = instance;
 
         if (db) cController = CvController.getInstance();
-    }
-
-    @Override
-    public void finalize() throws Throwable {
-        super.finalize();
-        //if (src != null) cvReleaseImage(src);
     }
 
     /**
@@ -114,12 +110,15 @@ public class AnalyticProcess extends Thread {
 
             // マス検出
             getRects(roiFrame);
+            // FIXME: 毎フレームのROI領域・サイズが一致するとは限らない→ROIを初回の領域で固定するか，ソースサイズで処理するかを決める
+            frameDiff(roiFrame);
 
             cvReleaseImage(roiFrame);
         }
 
         cvClearMemStorage(storage);
-        
+        delegate.setPrevFrame(getROIView(src, roiRect));
+
         _print("位置推定処理スレッドを終了...");
     }
 
@@ -260,7 +259,6 @@ public class AnalyticProcess extends Thread {
         IplImage tmp1 = cvCreateImage(srcSize, IPL_DEPTH_8U, 1);
         IplImage tmp2 = cvCreateImage(srcSize, IPL_DEPTH_8U, 1);
         CvMemStorage contoursStorage = cvCreateChildMemStorage(storage);
-        SquareList squares = new SquareList();
 
         // オリジナルを保持
         cvCopy(input, orig);
@@ -318,10 +316,10 @@ public class AnalyticProcess extends Thread {
             _print("完了\n");
 
             cvClearMemStorage(contoursStorage);
-            
+
             _print(String.format("    - チャンネル %d 処理完了\n", i));
         }
-        
+
         // 抽出された矩形ごとの処理
         squares.sort();
         _print(String.format("* 検出されたマス目の数: %d\n", squares.size()));
@@ -341,6 +339,22 @@ public class AnalyticProcess extends Thread {
         _print("完了\n");
     }
 
+    private void frameDiff(IplImage roi) {
+        CvSize roiSize = cvSize(roi.width(), roi.height());
+        IplImage diffImage = cvCreateImage(roiSize, IPL_DEPTH_8U, 3);
+
+        // FIXME: dummy用にハードコーディングしているので要修正
+        IplImage prevFrame = getROIView(delegate.getPrevFrame(), roiRect);
+
+        cvAbsDiff(roi, prevFrame, diffImage);
+        cvThreshold(diffImage, diffImage, 15, 255, CV_THRESH_BINARY);
+        cvErode(diffImage, diffImage, null, 6);
+        for (int i = 0; i < squares.size(); i++) {
+        squares.drawSquare(diffImage, i);
+        }
+        showImage("Diff", diffImage);
+    }
+
     /**
      * デバッグ用出力関数
      * @param str 出力文字列
@@ -350,10 +364,10 @@ public class AnalyticProcess extends Thread {
         if (cController != null) cController.addText(str);
         logger.fine(str.replaceAll("\n", ""));
     }
-    
+
     /**
      * 抽出矩形の保持用リスト
-     * 
+     *
      * @author atsushi-o
      * @since 2011/12/03
      */
@@ -381,15 +395,15 @@ public class AnalyticProcess extends Thread {
         public boolean add(CvPoint e) {
             if (e == null) return false;
             if (contains(e)) return false;
-            
+
             CvPoint ret = new CvPoint(4);
             java.util.ArrayList<CvPoint> list = new java.util.ArrayList<CvPoint>();
-            
+
             for (int i = 0; i < 4; i ++) {
                 list.add(new CvPoint(e.position(i)));
             }
             java.util.Collections.sort(list, new ManhattanComparator());
-            
+
             // 左下と右下の順番を入れ替え
             list.set(2, list.set(3, list.get(2)));
 
@@ -398,21 +412,21 @@ public class AnalyticProcess extends Thread {
             int height = Math.abs(list.get(1).y() - list.get(2).y());
             widthAve = (widthAve * size() + width) / (size() + 1);
             heightAve = (heightAve * size() + height) / (size() + 1);
-            
+
             int i = 0;
             for (CvPoint p : list) {
                 ret.position(i++).set(p);
             }
             return super.add(ret);
         }
-        
+
         /**
          * 抽出矩形のリストを左上から右下方向へソートする
          * @since 2011/12/03
          */
         public void sort() {
             java.util.Collections.sort(this, new SquareComparator());
-            
+
             // 重複マスを除去
             java.util.Iterator<CvPoint> it = this.iterator();
             CvPoint prevPt = it.next();
@@ -425,7 +439,7 @@ public class AnalyticProcess extends Thread {
                 }
             }
         }
-        
+
         /**
          * 2つの検出矩形の4点の座標の差の絶対値の和を返す
          * @param pt1 比較する矩形
@@ -441,7 +455,7 @@ public class AnalyticProcess extends Thread {
             }
             return sum;
         }
-        
+
         /**
          * 指定されたindexの矩形を描画する
          * @param img 書き出し先のIplImage
@@ -454,34 +468,34 @@ public class AnalyticProcess extends Thread {
                 cvLine(img, new CvPoint(pt.position(i)), new CvPoint(pt.position((i+1)%4)), CvScalar.GREEN, 2, CV_AA, 0);
             }
         }
-        
+
         /**
          * 抽出矩形のリストを出力する
-         * 
+         *
          * @return 抽出矩形のリストの文字列表現
          * @since 2011/12/04
          */
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            
+
             for (CvPoint p : this) {
-                sb.append(String.format("(%d, %d), (%d, %d), (%d, %d), (%d, %d)\n", 
+                sb.append(String.format("(%d, %d), (%d, %d), (%d, %d), (%d, %d)\n",
                     p.position(0).x(), p.position(0).y(),
                     p.position(1).x(), p.position(1).y(),
                     p.position(2).x(), p.position(2).y(),
                     p.position(3).x(), p.position(3).y()));
             }
-            
+
             sb.append("-----------------------------------\n");
             sb.append(String.format("平均幅: %f\n平均高: %f\n", widthAve, heightAve));
-            
+
             return sb.toString();
         }
-        
+
         /**
          * 抽出矩形のソート用比較クラス
-         * 
+         *
          * @author atsushi-o
          * @since 2011/12/03
          */
@@ -497,10 +511,10 @@ public class AnalyticProcess extends Thread {
             }
         }
     }
-     
+
     /**
      * CvPointのマンハッタン距離による比較クラス
-     * 
+     *
      * @author atsushi-o
      * @since 2011/12/04
      */
