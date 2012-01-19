@@ -111,13 +111,15 @@ public class AnalyticProcess extends Thread {
             // マス検出
             getRects(roiFrame);
             // FIXME: 毎フレームのROI領域・サイズが一致するとは限らない→ROIを初回の領域で固定するか，ソースサイズで処理するかを決める
-            frameDiff(roiFrame);
+            try {
+                frameDiff(src);
+            } catch (NullPointerException e) {}
+            delegate.setPrevFrame(src);
 
             cvReleaseImage(roiFrame);
         }
 
         cvClearMemStorage(storage);
-        delegate.setPrevFrame(getROIView(src, roiRect));
 
         _print("位置推定処理スレッドを終了...");
     }
@@ -340,15 +342,19 @@ public class AnalyticProcess extends Thread {
     }
 
     private void frameDiff(IplImage roi) {
-        CvSize roiSize = cvSize(roi.width(), roi.height());
+        CvSize roiSize = cvGetSize(roi);
         IplImage diffImage = cvCreateImage(roiSize, IPL_DEPTH_8U, 3);
 
         // FIXME: dummy用にハードコーディングしているので要修正
-        IplImage prevFrame = getROIView(delegate.getPrevFrame(), roiRect);
+        //IplImage prevFrame = getROIView(delegate.getPrevFrame(), roiRect);
+        IplImage prevFrame = delegate.getPrevFrame();
+        System.out.println("x: "+roi.width()+", y: "+roi.height());
+        System.out.println("x: "+prevFrame.width()+", y: "+prevFrame.height());
 
         cvAbsDiff(roi, prevFrame, diffImage);
         cvThreshold(diffImage, diffImage, 15, 255, CV_THRESH_BINARY);
-        cvErode(diffImage, diffImage, null, 6);
+        cvErode(diffImage, diffImage, null, 3);
+        cvSetImageROI(diffImage, roiRect);
         for (int i = 0; i < squares.size(); i++) {
         squares.drawSquare(diffImage, i);
         }

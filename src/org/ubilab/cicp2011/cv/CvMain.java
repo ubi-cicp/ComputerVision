@@ -173,7 +173,13 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
 
     @Override
     public void setPrevFrame(IplImage image) {
-        if (!useDummy) prevFrame = image;
+        if (!useDummy) {
+            System.out.println("setPrevFrame");
+            if (prevFrame != null) cvReleaseImage(prevFrame);
+            CvSize size = cvGetSize(image);
+            prevFrame = cvCreateImage(size, IPL_DEPTH_8U, 3);
+            cvCopy(image, prevFrame);
+        }
     }
 
 
@@ -212,6 +218,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
      * @since 2011/11/17
      */
     private IplImage _captureFrame() {
+        cvQueryFrame(capture);
         IplImage capFrame = cvQueryFrame(capture);
         showImage("Source", capFrame);
         return capFrame;
