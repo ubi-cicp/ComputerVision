@@ -257,20 +257,32 @@ public class SquareList extends ArrayList<CvPoint> {
     }
 
     /**
+     * 指定された色でindexの矩形を描画する
+     * @param img 書き出し先のIplImage
+     * @param index 書きだす矩形のindex
+     * @param color 線の色
+     * @since 2012/01/20
+     */
+    public void drawSquare(IplImage img, int index, CvScalar color) {
+        if (color == null) {
+            if (complementedSquare.contains(index)) color = CvScalar.YELLOW;
+            else                                    color = CvScalar.GREEN;
+        }
+
+        CvPoint pt = get(index);
+        for (int i = 0; i < 4; i++) {
+            cvLine(img, new CvPoint(pt.position(i)), new CvPoint(pt.position((i+1)%4)), color, 2, CV_AA, 0);
+        }
+    }
+
+    /**
      * 指定されたindexの矩形を描画する
      * @param img 書き出し先のIplImage
      * @param index 書きだす矩形のindex
      * @since 2011/12/05
      */
     public void drawSquare(IplImage img, int index) {
-        CvScalar color;
-        if (complementedSquare.contains(index)) color = CvScalar.YELLOW;
-        else color = CvScalar.GREEN;
-
-        CvPoint pt = get(index);
-        for (int i = 0; i < 4; i++) {
-            cvLine(img, new CvPoint(pt.position(i)), new CvPoint(pt.position((i+1)%4)), color, 2, CV_AA, 0);
-        }
+        drawSquare(img, index, null);
     }
 
     /**
