@@ -325,7 +325,7 @@ public class AnalyticProcess extends Thread {
         }
 
         // 抽出された矩形ごとの処理
-        squares.sort();
+        squares.normalize();
         _print(String.format("* 検出されたマス目の数: %d\n", squares.size()));
         _print(squares.toString());
         for (int i = 0; i < squares.size(); i++) {
