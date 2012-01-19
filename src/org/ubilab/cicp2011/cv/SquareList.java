@@ -107,6 +107,7 @@ public class SquareList extends ArrayList<CvPoint> {
      * 指定された場所に補完点を挿入する
      * @param index 挿入位置
      * @param e 補完点
+     * @since 2012/01/19
      */
     public void complementAdd(int index, CvPoint e) {
         if (e == null) return;
@@ -156,8 +157,6 @@ public class SquareList extends ArrayList<CvPoint> {
     /**
      * 四角形を補完する
      * <p>縦横に決められた数だけ格子状に四角形が並んでいる時，リストに格納された値に抜けがあればそれを検出し，補完を行う．</p>
-     * @param xSize 横サイズ
-     * @param ySize 縦サイズ
      * @since 2012/01/20
      */
     public void complement() {

@@ -23,12 +23,12 @@ public interface AnalyticProcessDelegate {
     public void showImage(String key, IplImage image);
     /**
      * 一つ前のフレーム画像を取得する
-     * @return
+     * @return 一つ前のフレーム画像
      */
     public IplImage getPrevFrame();
     /**
      * 一つ前のフレーム画像を保存する
-     * @param image
+     * @param image フレーム画像
      */
     public void setPrevFrame(IplImage image);
 }

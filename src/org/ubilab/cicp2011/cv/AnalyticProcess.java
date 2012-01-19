@@ -345,7 +345,8 @@ public class AnalyticProcess extends Thread {
 
     /**
      * フレーム間差分から変化のあったマスを検出する
-     * @param src 現在のフレーム
+     * @param now 現在のフレーム
+     * @param prev 過去のフレーム
      * @since 2012/01/18
      */
     public void frameDiff(IplImage now, IplImage prev) {
