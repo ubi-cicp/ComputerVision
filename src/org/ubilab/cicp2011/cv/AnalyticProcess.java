@@ -1,5 +1,6 @@
 package org.ubilab.cicp2011.cv;
 
+import java.awt.image.BufferedImage;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import com.googlecode.javacpp.Pointer;
@@ -363,8 +364,17 @@ public class AnalyticProcess extends Thread {
 
         // マス描画用にROIを設定
         cvSetImageROI(diffImage, roiRect);
+        BufferedImage img = diffImage.getBufferedImage();
+        // 一番真ん中の画素が黒でなかった場合変化ありと判定（FIXME: やっつけ・見直し必要）
         for (int i = 0; i < squares.size(); i++) {
-        squares.drawSquare(diffImage, i);
+            CvPoint p = squares.get(i);
+            int x = (p.position(0).x()+p.position(1).x())/2+roiRect.x();
+            int y = (p.position(0).y()+p.position(3).y())/2+roiRect.y();
+            //CvScalar s = cvGet2D(diffImage, x, y);
+            if (img.getRGB(x, y) != 0xff000000)
+                squares.drawSquare(diffImage, i, CvScalar.RED);
+            else
+                squares.drawSquare(diffImage, i);
         }
 
         showImage("Diff", diffImage);
