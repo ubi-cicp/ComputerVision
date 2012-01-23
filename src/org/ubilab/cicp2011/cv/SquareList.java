@@ -163,7 +163,20 @@ public class SquareList extends ArrayList<CvPoint> {
         // すでにすべての四角形を検出している場合はなにもしない
         if (super.size() >= xSize*ySize) return;
 
-        LOG.log(Level.INFO, "Detected square num < {0}. Complement squares.", xSize*ySize);
+        LOG.log(Level.INFO, "Detected square num (={0}) < {1}. Complement squares.", new Object[]{size(), xSize*ySize});
+        
+        // あらかじめます間の長さを求めておく
+        int offset = 0;
+        for (int i = 0; i < size()-1;) {
+            CvPoint a = super.get(i);
+            CvPoint b = super.get(++i);
+            int diff = b.position(0).x() - a.position(1).x();
+            if (diff >= 0 && diff < widthAve/2) {
+                offset = diff;
+                break;
+            }
+        }
+        
         for (int i = 0; i < ySize; i++) {
             for (int j = 0; j < xSize-1;) {
                 CvPoint a = super.get(i*ySize+j);
@@ -174,7 +187,7 @@ public class SquareList extends ArrayList<CvPoint> {
                         // j=0,つまり各行のはじめのマスを判定する際は一つ前の行のマスを参照してチェックを行う
                         CvPoint c = super.get((i-1)*ySize+j);
                         if (Math.abs(c.position(0).x() - a.x()) > widthAve/2) {    // 上のマス目のx座標との差が幅平均の半分よりも大きければ検出できていないと判定
-                            LOG.log(Level.INFO, "Oversight has been detected at index {0}", (i*ySize+j));
+                            LOG.log(Level.INFO, "(1)Oversight has been detected at index {0}", (i*ySize+j));
                             CvPoint n = new CvPoint(4);
                             n.position(0).set(new CvPoint(c.position(0).x(), c.position(0).y()+(int)heightAve));
                             n.position(1).set(new CvPoint(c.position(1).x(), c.position(1).y()+(int)heightAve));
@@ -187,7 +200,7 @@ public class SquareList extends ArrayList<CvPoint> {
                         // 一番最初のマス目の判定は最小のX, Y座標に近いかどうかで判定
                         CvPoint c = a.position(0);
                         if (Math.abs(c.x() - minX) > widthAve/2) {    // 最小のX座標との差がマスの幅平均の半分よりも大きければ検出できていないと判定
-                            LOG.log(Level.INFO, "Oversight has been detected at index {0}", (i*ySize+j));
+                            LOG.log(Level.INFO, "(2)Oversight has been detected at index {0}", (i*ySize+j));
                             CvPoint n = new CvPoint(4);
                             n.position(0).set(new CvPoint(minX, minY));
                             n.position(1).set(new CvPoint(minX + (int)widthAve, minY));
@@ -204,22 +217,28 @@ public class SquareList extends ArrayList<CvPoint> {
                     b = super.get(i*ySize+(++j));
                 } catch (IndexOutOfBoundsException ex) {
                     // 最後のマス目が未検出の場合
-                    LOG.log(Level.INFO, "Oversight has been detected at index {0}", (i*ySize+j));
+                    LOG.log(Level.INFO, "(3)Oversight has been detected at index {0}", (i*ySize+j));
                     CvPoint n = new CvPoint(4);
-                    n.position(0).set(new CvPoint(maxX-(int)widthAve, maxY-(int)heightAve));
-                    n.position(1).set(new CvPoint(maxX, maxY-(int)heightAve));
-                    n.position(2).set(new CvPoint(maxX, maxY));
-                    n.position(3).set(new CvPoint(maxX-(int)widthAve, maxY));
+                    if (size() != xSize*ySize-1) {
+                        n.position(0).set(new CvPoint(a.position(1).x()+offset, a.position(1).y()));
+                        n.position(1).set(new CvPoint(a.position(1).x()+offset+(int)widthAve, a.position(0).y()));
+                        n.position(2).set(new CvPoint(a.position(2).x()+offset+(int)widthAve, a.position(3).y()));
+                        n.position(3).set(new CvPoint(a.position(2).x()+offset, a.position(2).y()));
+                    } else {
+                        n.position(0).set(new CvPoint(maxX-(int)widthAve, maxY-(int)heightAve));
+                        n.position(1).set(new CvPoint(maxX, maxY-(int)heightAve));
+                        n.position(2).set(new CvPoint(maxX, maxY));
+                        n.position(3).set(new CvPoint(maxX-(int)widthAve, maxY));
+                    }
                     complementAdd(i*ySize+j, n);
                     continue;
                 }
 
                 // 矩形aと矩形bとの間が平均サイズの半分以上離れている場合はその間が検出されていないとみなす
-                if (b.position(0).x() - a.position(1).x() > widthAve/2) {
+                if (Math.abs(b.position(0).x() - a.position(1).x()) > widthAve/2) {
                     LOG.log(Level.INFO, "Oversight has been detected at index {0}-{1}", new Object[]{(i*ySize+j-1), (i*ySize+j)});
 
                     // もう一つ前の矩形との距離を求め，その距離分だけ離れた場所に矩形を追加
-                    int offset = a.position(0).x() - super.get(i*ySize+j-2).position(1).x();
                     CvPoint n = new CvPoint(4);
                     n.position(0).set(new CvPoint(a.position(1).x()+offset, a.position(1).y()));
                     n.position(1).set(new CvPoint(a.position(1).x()+offset+(int)widthAve, b.position(0).y()));
