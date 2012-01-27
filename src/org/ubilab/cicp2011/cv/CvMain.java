@@ -1,5 +1,6 @@
 package org.ubilab.cicp2011.cv;
 
+import org.ubilab.cicp2011.cv.event.*;
 import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -23,6 +24,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
     private CvCapture capture;
     private boolean debug;
     private boolean useDummy;
+    private ShogiMoveEventListener evtListener;
     private static final HashMap<String, CanvasFrame> canvas;
     private static final Logger logger;
     private AnalyticProcess curThread = null;
@@ -48,6 +50,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
         private int height      = 960;
         private boolean debug   = false;
         private boolean useDummy= false;
+        private ShogiMoveEventListener evtListener = null;
 
         /**
          * 必須パラメータを指定
@@ -62,6 +65,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
         public Builder height(int val)      { height = val; return this; }
         public Builder debug(boolean val)   { debug = val; return this; }
         public Builder useDummy(boolean val){ useDummy = val; return this; }
+        public Builder evtListener(ShogiMoveEventListener val) { evtListener = val; return this; }
 
         /**
          * CvMainのインスタンスを生成する
@@ -100,6 +104,7 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
 
         _setVisible(false);
         useDummy = param.useDummy;
+        evtListener = param.evtListener;
 
         logger.log(Level.INFO, "CvMain start: camera{0} ({1}x{2}) {3}", new Object[]{param.camera, param.width, param.height, debug?"DEBUG":""});
     }
@@ -179,6 +184,13 @@ public class CvMain implements AnalyticProcessDelegate, CvControllerDelegate {
             CvSize size = cvGetSize(image);
             prevFrame = cvCreateImage(size, IPL_DEPTH_8U, 3);
             cvCopy(image, prevFrame);
+        }
+    }
+
+    @Override
+    public void moveEventOccur(ShogiMoveEvent evt) {
+        if (evtListener != null) {
+            evtListener.move(evt);
         }
     }
 

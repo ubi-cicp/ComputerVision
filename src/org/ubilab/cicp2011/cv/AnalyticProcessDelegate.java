@@ -1,5 +1,6 @@
 package org.ubilab.cicp2011.cv;
 
+import org.ubilab.cicp2011.cv.event.ShogiMoveEvent;
 import static com.googlecode.javacv.cpp.opencv_core.IplImage;
 
 /**
@@ -31,4 +32,9 @@ public interface AnalyticProcessDelegate {
      * @param image フレーム画像
      */
     public void setPrevFrame(IplImage image);
+    /**
+     * 変化のあったマス目を返す
+     * @param evt 変化のあったマス目を表すイベントオブジェクト
+     */
+    public void moveEventOccur(ShogiMoveEvent evt);
 }

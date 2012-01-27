@@ -1,5 +1,6 @@
 package org.ubilab.cicp2011.cv;
 
+import org.ubilab.cicp2011.cv.event.ShogiMoveEvent;
 import java.awt.image.BufferedImage;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -371,9 +372,12 @@ public class AnalyticProcess extends Thread {
             int x = (p.position(0).x()+p.position(1).x())/2+roiRect.x();
             int y = (p.position(0).y()+p.position(3).y())/2+roiRect.y();
             //CvScalar s = cvGet2D(diffImage, x, y);
-            if (img.getRGB(x, y) != 0xff000000)
+            if (img.getRGB(x, y) != 0xff000000) {
                 squares.drawSquare(diffImage, i, CvScalar.RED);
-            else
+                if (delegate != null) {
+                    delegate.moveEventOccur(new ShogiMoveEvent(this, i%9, i!=0?i/9:0));
+                }
+            } else
                 squares.drawSquare(diffImage, i);
         }
 
