@@ -164,7 +164,7 @@ public class SquareList extends ArrayList<CvPoint> {
         if (super.size() >= xSize*ySize) return;
 
         LOG.log(Level.INFO, "Detected square num (={0}) < {1}. Complement squares.", new Object[]{size(), xSize*ySize});
-        
+
         // あらかじめます間の長さを求めておく
         int offset = 0;
         for (int i = 0; i < size()-1;) {
@@ -176,7 +176,7 @@ public class SquareList extends ArrayList<CvPoint> {
                 break;
             }
         }
-        
+
         for (int i = 0; i < ySize; i++) {
             for (int j = 0; j < xSize-1;) {
                 CvPoint a = super.get(i*ySize+j);
@@ -219,12 +219,12 @@ public class SquareList extends ArrayList<CvPoint> {
                     // 最後のマス目が未検出の場合
                     LOG.log(Level.INFO, "(3)Oversight has been detected at index {0}", (i*ySize+j));
                     CvPoint n = new CvPoint(4);
-                    if (size() != xSize*ySize-1) {
+                    if (size() != xSize*ySize-1) {  // 一番後ろのマスの何個かが未検出の場合
                         n.position(0).set(new CvPoint(a.position(1).x()+offset, a.position(1).y()));
                         n.position(1).set(new CvPoint(a.position(1).x()+offset+(int)widthAve, a.position(0).y()));
                         n.position(2).set(new CvPoint(a.position(2).x()+offset+(int)widthAve, a.position(3).y()));
                         n.position(3).set(new CvPoint(a.position(2).x()+offset, a.position(2).y()));
-                    } else {
+                    } else {                        // 一番後ろのマス1個が未検出の場合
                         n.position(0).set(new CvPoint(maxX-(int)widthAve, maxY-(int)heightAve));
                         n.position(1).set(new CvPoint(maxX, maxY-(int)heightAve));
                         n.position(2).set(new CvPoint(maxX, maxY));
@@ -241,8 +241,15 @@ public class SquareList extends ArrayList<CvPoint> {
                     // もう一つ前の矩形との距離を求め，その距離分だけ離れた場所に矩形を追加
                     CvPoint n = new CvPoint(4);
                     n.position(0).set(new CvPoint(a.position(1).x()+offset, a.position(1).y()));
-                    n.position(1).set(new CvPoint(a.position(1).x()+offset+(int)widthAve, b.position(0).y()));
-                    n.position(2).set(new CvPoint(a.position(2).x()+offset+(int)widthAve, b.position(3).y()));
+                    if (Math.abs(b.position(0).y() - a.position(0).y()) > heightAve/2) {
+                        // 各行の末尾ますの時
+                        n.position(1).set(new CvPoint(a.position(1).x()+offset+(int)widthAve, a.position(0).y()));
+                        n.position(2).set(new CvPoint(a.position(2).x()+offset+(int)widthAve, a.position(3).y()));
+                    } else {
+                        // それ以外
+                        n.position(1).set(new CvPoint(a.position(1).x()+offset+(int)widthAve, b.position(0).y()));
+                        n.position(2).set(new CvPoint(a.position(2).x()+offset+(int)widthAve, b.position(3).y()));
+                    }
                     n.position(3).set(new CvPoint(a.position(2).x()+offset, a.position(2).y()));
                     complementAdd(i*ySize+j, n);
                 }
